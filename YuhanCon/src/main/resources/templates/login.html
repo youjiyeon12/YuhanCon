@@ -1,0 +1,14 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>로그인 페이지</title>
+</head>
+<body>
+<h2>로그인</h2>
+<form th:action="@{/login}" method="post">
+	<label>email : <input type ="text" name="email"/></label><br>
+	<label>password : <input type ="text" name="password"/></label>
+	<button type="submit">로그인</button>
+</form>
+</body>
+
+</html>
