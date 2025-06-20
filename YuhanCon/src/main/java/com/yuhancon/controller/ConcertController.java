@@ -1,6 +1,8 @@
 package com.yuhancon.controller;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -14,12 +16,42 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.yuhancon.domain.Concert;
 import com.yuhancon.repository.ConcertRepository;
+import com.yuhancon.repository.ReserveRepository;
+
+import jakarta.transaction.Transactional;
 
 @Controller
 public class ConcertController {
 
     @Autowired
     private ConcertRepository concertRepository;
+
+    @Autowired
+    private ReserveRepository reserveRepository;
+
+    // 이미지 파일 저장 메서드
+    public String saveImage(MultipartFile imageFile) throws IOException {
+        if (imageFile.isEmpty()) return null;
+
+        String originalName = imageFile.getOriginalFilename();
+        String extension = originalName.substring(originalName.lastIndexOf("."));
+        String fileName = System.currentTimeMillis() + "_" + UUID.randomUUID() + extension;
+        fileName = fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+
+        // 실시간 반영 가능한 외부 폴더
+        String uploadDir = System.getProperty("user.dir") + "/uploaded-images";
+        File saveFile = new File(uploadDir, fileName);
+        
+        if (!saveFile.getParentFile().exists()) {
+            saveFile.getParentFile().mkdirs();
+        }
+
+        imageFile.transferTo(saveFile);
+
+        // 경로 리턴은 브라우저가 접근할 수 있게
+        return "/uploaded-images/" + fileName;
+    }
+
 
     // 공연 목록
     @GetMapping("/concertList")
@@ -44,19 +76,9 @@ public class ConcertController {
         try {
             concert.setAvailableSeats(concert.getTotalSeats());
 
-            if (!imageFile.isEmpty()) {
-                String fileName = imageFile.getOriginalFilename();
-                // 파일명 정제 (띄어쓰기, 한글, 특수문자 제거 → _ 대체)
-                fileName = fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
-
-                // 저장 경로
-                String uploadDir = System.getProperty("user.dir") + "/src/main/resources/static/images";
-                File saveFile = new File(uploadDir, fileName);
-                saveFile.getParentFile().mkdirs();
-                imageFile.transferTo(saveFile);
-
-                // DB에 저장될 웹 접근 경로
-                concert.setImage("/images/" + fileName);
+            String savedPath = saveImage(imageFile);
+            if (savedPath != null) {
+                concert.setImage(savedPath);
             }
 
             concertRepository.save(concert);
@@ -73,7 +95,7 @@ public class ConcertController {
         Concert concert = concertRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("해당 공연이 없습니다. id=" + id));
         model.addAttribute("concert", concert);
-        return "concertDetail"; // templates/concertDetail.html
+        return "concertDetail";
     }
 
     // 공연 수정 폼
@@ -87,26 +109,40 @@ public class ConcertController {
 
     // 공연 수정 처리
     @PostMapping("/concertEdit/{id}")
-    public String editConcert(@PathVariable Long id, @ModelAttribute Concert updatedConcert) {
+    public String editConcert(
+            @PathVariable Long id,
+            @ModelAttribute Concert updatedConcert,
+            @RequestParam("imageFile") MultipartFile imageFile
+    ) {
         Concert concert = concertRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("해당 공연이 없습니다."));
 
         concert.setTitle(updatedConcert.getTitle());
         concert.setContent(updatedConcert.getContent());
-        concert.setPlace(updatedConcert.getPlace());
         concert.setDate(updatedConcert.getDate());
+        concert.setPlace(updatedConcert.getPlace());
         concert.setTotalSeats(updatedConcert.getTotalSeats());
         concert.setAvailableSeats(updatedConcert.getAvailableSeats());
-        concert.setImage(updatedConcert.getImage());
+
+        try {
+            String savedPath = saveImage(imageFile);
+            if (savedPath != null) {
+                concert.setImage(savedPath); // 새 이미지 업로드 시에만 덮어씀
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         concertRepository.save(concert);
-        return "redirect:/concertinfo/" + id;
+        return "redirect:/concertList";
     }
 
     // 공연 삭제 처리
     @PostMapping("/concertDelete/{id}")
+    @Transactional
     public String deleteConcert(@PathVariable Long id) {
-        concertRepository.deleteById(id);
+        reserveRepository.deleteByConcertId(id); // 예매 먼저 삭제
+        concertRepository.deleteById(id);        // 공연 삭제
         return "redirect:/concertList";
     }
 }

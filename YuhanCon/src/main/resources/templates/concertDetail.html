@@ -34,7 +34,7 @@
 
   <p th:if="${concert.image != null}">
     <strong>이미지:</strong><br>
-    <img th:src="${concert.image}" alt="공연 이미지">
+    <img th:src="@{${concert.image}}" alt="공연 이미지">
   </p>
 </div>
 

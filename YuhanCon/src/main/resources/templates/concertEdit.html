@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>공연 수정</title>
-    <link rel="stylesheet" th:href="@{/css/concertWrite.css}">
+    <link rel="stylesheet" th:href="@{/css/concertEdit.css}">
 </head>
 <body>
 
@@ -23,7 +23,7 @@
 
 <h1>공연 수정</h1>
 
-<form th:action="@{'/concertEdit/' + ${concert.id}}" method="post">
+<form th:action="@{'/concertEdit/' + ${concert.id}}" method="post" enctype="multipart/form-data">
     <div class="form-group">
         <label>공연 제목</label>
         <input type="text" name="title" th:value="${concert.title}" required>
@@ -54,14 +54,16 @@
         <input type="number" name="availableSeats" th:value="${concert.availableSeats}" required>
     </div>
 
-    <div class="form-group">
-        <label>이미지 경로</label>
-        <input type="text" name="image" th:value="${concert.image}">
+  	<div class="form-group">
+        <label>새 이미지 업로드</label>
+        <input type="file" name="imageFile" accept="image/*">
+
         <div th:if="${concert.image != null}">
-            <img th:src="${concert.image}" alt="이미지 미리보기" width="200" style="margin-top:10px;">
+            <p>현재 이미지:</p>
+            <img th:src="@{${concert.image}}" alt="공연 이미지">
         </div>
     </div>
-
+    
     <div class="form-buttons">
         <button type="submit">수정 완료</button>
         <a href="/concertList"><button type="button">취소</button></a>
