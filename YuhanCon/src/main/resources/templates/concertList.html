@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>공연 목록</title>
+    <link rel="stylesheet" th:href="@{/css/concertList.css}">
+</head>
+<body>
+
+<!-- 상단 네비게이션 -->
+<div class="navbar">
+    <div class="nav-left">
+        <a href="/main" class="logo">YuhanCon</a>
+        <a href="/main">홈</a>
+        <a href="/concertList">공연정보</a>
+        <a href="/boardMain">게시판</a>
+        <a href="/mypage">마이페이지</a>
+    </div>
+    <div class="nav-right">
+        <a href="/logout">로그아웃</a>
+    </div>
+</div>
+
+<h1>공연 목록</h1>
+
+<table>
+    <colgroup>
+        <col style="width: 8%;">
+        <col style="width: 32%;">
+        <col style="width: 20%;">
+        <col style="width: 15%;">
+        <col style="width: 12%;">
+        <col style="width: 13%;">
+    </colgroup>
+    <thead>
+        <tr>
+            <th>번호</th>
+            <th>제목</th>
+            <th>장소</th>
+            <th>날짜</th>
+            <th>총좌석</th>
+            <th>남은좌석</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="concert : ${concertList}">
+            <td th:text="${concert.id}">1</td>
+            <td style="text-align: left;">
+                <a th:href="@{'/concertDetail/' + ${concert.id}}" th:text="${concert.title}">공연제목</a>
+            </td>
+            <td th:text="${concert.place}"></td>
+            <td th:text="${#temporals.format(concert.date, 'yyyy-MM-dd')}"></td>
+            <td th:text="${concert.totalSeats}"></td>
+            <td th:text="${concert.availableSeats}"></td>
+        </tr>
+    </tbody>
+</table>
+
+<div style="margin-top: 20px;">
+    <a href="/concertWrite">
+        <button type="button">공연 등록</button>
+    </a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,146 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f5f5f5;
+}
+
+/* 네비게이션 바 */
+.navbar {
+  background-color: #333;
+  color: white;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-left a, .nav-right a {
+  color: white;
+  text-decoration: none;
+  margin: 0 12px;
+}
+
+.nav-left .logo {
+  font-weight: bold;
+  font-size: 20px;
+}
+
+/* 제목 */
+h1 {
+  text-align: center;
+  margin: 40px 0 15px;
+  font-size: 26px;
+  color: #222;
+}
+
+/* 구분선 */
+.divider {
+  width: 60%;
+  margin: 15px auto 30px;
+  border: none;
+  border-top: 1px solid #ccc;
+}
+
+/* 콘텐츠 박스 */
+.content-box {
+  width: 60%;
+  margin: 0 auto;
+  padding: 20px 30px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.06);
+}
+
+.content-box p {
+  margin: 8px 0;
+  font-size: 16px;
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.content-box strong {
+  display: inline-block;
+  width: 90px;
+  font-weight: bold;
+  color: #222;
+}
+
+/* 이미지 스타일 */
+.content-box img {
+  display: block;
+  margin: 10px 0 0;
+  width: 250px;
+  max-width: 100%;
+  border-radius: 6px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.08);
+}
+
+/* 공연 번호 */
+.meta-info {
+  text-align: center;
+  font-size: 13px;
+  color: #888;
+  margin-top: 20px;
+}
+
+/* 예매 폼 */
+.reserve-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.reserve-form form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reserve-form input[type="number"] {
+  padding: 6px 10px;
+  width: 60px;
+  font-size: 14px;
+}
+
+.reserve-form button {
+  padding: 8px 14px;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.reserve-form button:hover {
+  background-color: #555;
+}
+
+/* 버튼 영역 */
+.detail-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 50px;
+}
+
+.detail-actions a,
+.detail-actions button {
+  background-color: #333;
+  color: white;
+  padding: 9px 20px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.detail-actions a:hover,
+.detail-actions button:hover {
+  background-color: #555;
+}

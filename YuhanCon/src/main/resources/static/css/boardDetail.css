@@ -1,14 +1,16 @@
 /* 전체 기본 스타일 */
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f5f5f5;
 }
 
 /* 네비게이션 바 */
 .navbar {
     background-color: #333;
     color: white;
-    padding: 10px 20px;
+    padding: 15px 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -17,81 +19,101 @@ body {
 .nav-left a, .nav-right a {
     color: white;
     text-decoration: none;
-    margin: 0 15px;
+    margin: 0 12px;
 }
 
 .nav-left .logo {
     font-weight: bold;
-    font-size: 18px;
+    font-size: 20px;
 }
 
-/* 제목 스타일 */
+/* 제목 */
 h1 {
     text-align: center;
-    margin-top: 40px;
-    font-size: 28px;
-    color: #333;
+    margin: 40px 0 15px;
+    font-size: 26px;
+    color: #222;
 }
 
 /* 구분선 */
 .divider {
     width: 60%;
-    margin: 20px auto 40px;
+    margin: 15px auto 30px;
     border: none;
     border-top: 1px solid #ccc;
 }
 
-/* 본문 내용 박스 */
+/* 콘텐츠 박스 */
 .content-box {
     width: 60%;
-    margin: 30px auto 20px auto;
-    padding: 30px;
-    background-color: #f9f9f9;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-
-    font-size: 17px;
-    line-height: 1.8;
-    color: #333;
-    white-space: pre-wrap;
-
-    text-align: left;      
-    display: block;
-    min-height: 150px;      
+    margin: 0 auto;
+    padding: 20px 30px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.06);
 }
 
-/* 작성자, 날짜 정보 */
+.content-box p {
+    margin: 8px 0;
+    font-size: 16px;
+    color: #333;
+    display: flex;
+    align-items: center;
+}
+
+.content-box strong {
+    display: inline-block;
+    width: 90px;
+    font-weight: bold;
+    color: #222;
+}
+
+/* 이미지 */
+.content-box img {
+    display: block;
+    margin: 10px 0 0;
+    width: 250px;
+    max-width: 100%;
+    border-radius: 6px;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.08);
+}
+
+/* 메타 정보 */
 .meta-info {
     text-align: center;
-    font-size: 14px;
+    font-size: 13px;
     color: #888;
-    margin-top: 10px;
-    margin-bottom: 30px;
+    margin-top: 20px;
 }
 
 /* 버튼 영역 */
 .detail-actions {
-    margin-top: 40px;
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 15px;
+    margin: 30px 0 50px;
 }
 
-/* 버튼 스타일 */
 .detail-actions a,
 .detail-actions button {
     background-color: #333;
     color: white;
-    padding: 8px 16px;
-    font-size: 15px;
-    text-decoration: none;
+    padding: 9px 20px;
+    font-size: 14px;
     border: none;
     border-radius: 4px;
+    text-decoration: none;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
 }
 
 .detail-actions a:hover,
 .detail-actions button:hover {
     background-color: #555;
 }
+
+/* 줄 바꿈 유지 */
+.content-text {
+    white-space: pre-line;
+}
+

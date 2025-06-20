@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>공연 상세</title>
+  <link rel="stylesheet" th:href="@{/css/concertDetail.css}">
+</head>
+<body>
+
+<!-- 네비게이션 -->
+<div class="navbar">
+  <div class="nav-left">
+    <a href="/main" class="logo">YuhanCon</a>
+    <a href="/main">홈</a>
+    <a href="/concertList">공연정보</a>
+    <a href="/boardMain">게시판</a>
+    <a href="/mypage">마이페이지</a>
+  </div>
+  <div class="nav-right">
+    <a href="/logout">로그아웃</a>
+  </div>
+</div>
+
+<h1 th:text="${concert.title}">공연 제목</h1>
+<hr class="divider">
+
+<!-- 내용 박스 -->
+<div class="content-box">
+  <p><strong>설명:</strong> <span th:text="${concert.content}"></span></p>
+  <p><strong>장소:</strong> <span th:text="${concert.place}"></span></p>
+  <p><strong>날짜:</strong> <span th:text="${#temporals.format(concert.date, 'yyyy-MM-dd')}"></span></p>
+  <p><strong>총 좌석:</strong> <span th:text="${concert.totalSeats}"></span></p>
+  <p><strong>남은 좌석:</strong> <span th:text="${concert.availableSeats}"></span></p>
+
+  <p th:if="${concert.image != null}">
+    <strong>이미지:</strong><br>
+    <img th:src="${concert.image}" alt="공연 이미지">
+  </p>
+</div>
+
+<!-- 메타 정보 -->
+<div class="meta-info">
+  공연 번호: <span th:text="${concert.id}"></span>
+</div>
+
+<hr class="divider">
+
+<!-- 예매 폼 -->
+<div class="reserve-form">
+  <form th:action="@{/reserve}" method="post">
+    <input type="hidden" name="concertId" th:value="${concert.id}">
+    <label>예매 좌석 수:</label>
+    <input type="number" name="seatCount" min="1" max="100" required>
+    <button type="submit">예매하기</button>
+  </form>
+</div>
+
+<!-- 버튼 영역 -->
+<div class="detail-actions">
+  <a th:href="@{'/concertEdit/' + ${concert.id}}">수정</a>
+
+  <form th:action="@{'/concertDelete/' + ${concert.id}}" method="post" style="display:inline;">
+    <button type="submit" onclick="return confirm('정말 삭제하시겠습니까?')">삭제</button>
+  </form>
+
+  <a th:href="@{/concertList}">목록으로</a>
+</div>
+
+</body>
+</html>
