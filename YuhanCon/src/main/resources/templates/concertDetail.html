@@ -50,7 +50,7 @@
   <form th:action="@{/reserve}" method="post">
     <input type="hidden" name="concertId" th:value="${concert.id}">
     <label>예매 좌석 수:</label>
-    <input type="number" name="seatCount" min="1" max="100" required>
+    <input type="number" name="seatCount" min="1" max="6" required>
     <button type="submit">예매하기</button>
   </form>
 </div>
