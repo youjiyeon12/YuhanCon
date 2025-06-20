@@ -13,19 +13,25 @@ import lombok.Data;
 
 @Entity
 @Data
-public class Post {
+public class Board {
 	
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+	
     private String title;
+    
     @ManyToOne(fetch = FetchType.LAZY) //다대일 관계 설정
     @JoinColumn(name = "member_id") //외래키 이름을 명시적으로 설정
     private Member member;
+    
     private String content;
+    
     private LocalDate boardAt;
+    
     private int cnt = 0;
+    
     private String image;
-	
+    
 
 }

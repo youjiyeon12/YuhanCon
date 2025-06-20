@@ -6,9 +6,10 @@
 <h2>로그인</h2>
 <form th:action="@{/login}" method="post">
 	<label>email : <input type ="text" name="email"/></label><br>
-	<label>password : <input type ="text" name="password"/></label>
+	<label>password : <input type ="password" name="password"/></label>
 	<button type="submit">로그인</button>
 </form>
+<a href="/signup"><button type="button">회원가입</button></a>
 </body>
 
 </html>

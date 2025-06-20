@@ -27,6 +27,7 @@ public class SecurityConfig {
                 .requestMatchers("/main", "/signup", "/login", "/css/**", "/js/**").permitAll() //누구나 접근 가능
                 .requestMatchers("/admin/**").hasRole("ADMIN") //ADMIN 권한이 있어야 접근 가능 
                 .anyRequest().authenticated() //로그인된 사용자만 접근 가능
+                //.anyRequest().permitAll()//모두 접근 가능 
             )
             .formLogin(form -> form
                 .loginPage("/login") //로그인 페이지

@@ -2,6 +2,7 @@ package com.yuhancon.controller;
 
 import java.time.LocalDate;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,54 +10,88 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
-import com.yuhancon.domain.Post;
-import com.yuhancon.repository.PostRepository;
+import com.yuhancon.domain.Member;
+import com.yuhancon.domain.Board;
+import com.yuhancon.repository.BoardRepository;
+import com.yuhancon.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
 public class BoardController {
-	
-		private final PostRepository postRepository;
-		
-	 	//글쓰기
-	 	@GetMapping("/write")
-	    public String writeForm(Model model) {
-	        model.addAttribute("post", new Post());
-	        return "BoardWrite"; 
-	    }
-	 	
-	 	//폼에서 입력한 데이터 받아옴
-	    @PostMapping("/write")
-	    public String writeSubmit(@ModelAttribute Post post) { //@ModelAttribute html에서 입력한 데이터가 자동으로 넘어옴
-	    	
-	    	
-	        post.setBoardAt(LocalDate.now());   // 작성일임
-	        post.setCnt(0);                     // 조회수임
-	        post.setImage(null);               // 일단 null 값으로 해놨음 
 
-	        // 멤버 로그인 연동이 필요하므로 지금은  나중에 연동
-	        // post.setMember(loggedInMember); 
+    private final BoardRepository boardRepository;
 
-	        postRepository.save(post);
-	        return "redirect:/list";
-	    }
+    // 글쓰기 폼
+    @GetMapping("/boardWrite")
+    public String writeForm(Model model) {
+        model.addAttribute("board", new Board());  
+        return "boardWrite";
+    }
 
-	    @GetMapping("/list")
-	    public String list(Model model) {
-	        model.addAttribute("postList", postRepository.findAll());
-	        return "BoardList";
-	    }
+    // 글쓰기 저장
+    @PostMapping("/boardWrite")
+    public String writeSubmit(
+        @ModelAttribute Board board,  
+        @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        Member loginMember = customUserDetails.getMember();
+        board.setMember(loginMember);
+        board.setBoardAt(LocalDate.now());
+        board.setCnt(0);
+        board.setImage(null); 
 
-	    @GetMapping("/detail/{id}")
-	    public String detail(@PathVariable Long id, Model model) {
-	        Post post = postRepository.findById(id).orElseThrow();
-	        model.addAttribute("post", post);
-	        return "BoardDetail";
-	    }
-	    
-	    
+        boardRepository.save(board);  
+        return "redirect:/boardMain";
+    }
 
-	
+    // 게시판 메인
+    @GetMapping("/boardMain")
+    public String list(Model model) {
+        model.addAttribute("boardlist", boardRepository.findAll());
+        return "boardMain";
+    }
+
+    // 글 상세보기
+    @GetMapping("/boardDetail/{id}")
+    public String detail(@PathVariable Long id, Model model) {
+        Board board = boardRepository.findById(id).orElseThrow();  
+
+        board.setCnt(board.getCnt() + 1);  //조회수 증가
+        boardRepository.save(board);
+
+        model.addAttribute("board", board); 
+        return "boardDetail";
+    }
+    
+    //글 수정
+    @GetMapping("/boardEdit/{id}")
+    public String editForm(@PathVariable Long id, Model model) {
+        Board board = boardRepository.findById(id).orElseThrow();
+        model.addAttribute("board", board);
+        return "boardEdit";  // 수정용 HTML 템플릿
+    }
+    
+    //글 수정 데이터 처리 
+    @PostMapping("/boardEdit/{id}")
+    public String editSubmit(@PathVariable Long id, @ModelAttribute Board updatedBoard) {
+        Board board = boardRepository.findById(id).orElseThrow();
+
+        // 수동으로 기존 board에 필드 덮어쓰기
+        board.setTitle(updatedBoard.getTitle());
+        board.setContent(updatedBoard.getContent());
+        board.setImage(updatedBoard.getImage()); // 나중에 이미지도 수정할 경우 대비
+
+        boardRepository.save(board); // id가 존재하므로 update 실행됨
+        return "redirect:/boardDetail/" + id;
+    }
+    
+    //글 삭제
+    @PostMapping("/boardDelete/{id}")
+    public String delete(@PathVariable Long id) {
+        boardRepository.deleteById(id);
+        return "redirect:/boardMain";
+    }
+    
 }
