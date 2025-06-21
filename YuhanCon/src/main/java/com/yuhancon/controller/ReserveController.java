@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -14,6 +15,7 @@ import com.yuhancon.repository.ConcertRepository;
 import com.yuhancon.repository.ReserveRepository;
 import com.yuhancon.security.CustomUserDetails;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -49,5 +51,25 @@ public class ReserveController {
 
         return "redirect:/concertList";
     }
+    
+    @PostMapping("/cancelReserve/{id}")
+    @Transactional
+    public String cancelReserve(@PathVariable Long id) {
+        // 1. 예약 정보 가져오기
+        Reserve reserve = reserveRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("해당 예약이 없습니다."));
+
+        // 2. 공연 정보 가져오기
+        Concert concert = reserve.getConcert();
+
+        // 3. 남은 좌석 수 복구
+        concert.setAvailableSeats(concert.getAvailableSeats() + reserve.getSeatCount());
+
+        // 4. 예약 삭제
+        reserveRepository.deleteById(id);
+
+        return "redirect:/mypage";
+    }
+    
 }
 

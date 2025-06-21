@@ -48,6 +48,10 @@
 	     </a>
 	     <p class="post-date" th:text="${#temporals.format(reserve.concert.date, 'yyyy-MM-dd')}"></p>
 	     <p class="post-content" th:text="'예매 수량: ' + ${reserve.seatCount} + '장'"></p>
+	     <!-- 예약 취소 -->
+	     <form th:action="@{|/cancelReserve/${reserve.id}|}" method="post" style="margin-top: 10px;">
+      	 	<button type="submit" class="btn-cancel" style="background-color: #d9534f; color: white; border: none; padding: 6px 10px; border-radius: 4px;">예약 취소</button>
+    	 </form>
 	   </div>
 	 </div>
 

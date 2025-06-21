@@ -2,6 +2,7 @@ package com.yuhancon.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -129,6 +130,21 @@ public class ConcertController {
         }
 
         model.addAttribute("isOwner", isOwner);
+        
+        // 로그인된 사용자만 기록
+        if (userDetails != null) {
+            Member member = memberRepository.findByEmail(userDetails.getUsername()).orElseThrow();
+
+            // 중복 저장 방지: 동일 공연 이미 본 기록 있으면 삭제
+            recentConcertViewRepository.deleteByMemberAndConcert(member, concert);
+
+            // 새로운 최근본 기록 저장
+            RecentConcertView view = new RecentConcertView();
+            view.setMember(member);
+            view.setConcert(concert);
+            view.setViewedAt(LocalDateTime.now());
+            recentConcertViewRepository.save(view);
+        }
 
         return "concertDetail";
     }

@@ -80,7 +80,15 @@ public class BoardController {
         return "boardDetail";
     }
 
-     
+    // 수정 view
+    @GetMapping("/boardEdit/{id}")
+    public String editForm(@PathVariable Long id, Model model) {
+        Board board = boardRepository.findById(id).orElseThrow();
+        model.addAttribute("board", board);
+        return "boardEdit"; // 수정 폼 HTML
+    }
+
+    
     //글 수정 데이터 처리 
     @PostMapping("/boardEdit/{id}")
     public String editSubmit(@PathVariable Long id, @ModelAttribute Board updatedBoard) {
