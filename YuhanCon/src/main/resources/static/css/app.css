@@ -232,7 +232,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .sort select, .count select { min-height: 38px; border-radius: 999px; border: 1px solid var(--line); padding: 0 34px 0 14px; background: var(--paper); font-size: 14px; }
 .past { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 10px; }
 .past a {
-  display: block; height: 100%; padding: 14px; border-radius: 12px; text-decoration: none; font-size: 13px; color: var(--ink-3);
+  display: block; height: 100%; padding: 14px; border-radius: 12px; text-decoration: none; font-size: 13px; color: var(--ink-2);
   background-color: var(--paper); background-image: radial-gradient(var(--line-soft) 1.1px, transparent 1.3px); background-size: 7px 7px;
 }
 .past b { display: block; color: var(--ink-2); font-size: 15px; margin-bottom: 4px; }
@@ -298,7 +298,7 @@ input:hover, textarea:hover { border-color: var(--ink-3); }
 input:focus, textarea:focus, select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
 :is(input, textarea, select)[aria-invalid="true"] { border-color: var(--stamp); }
 input[type="file"] { font-size: 14px; }
-input::placeholder, textarea::placeholder { color: #9AA0AC; }
+input::placeholder, textarea::placeholder { color: var(--ink-3); } /* 흰 바탕에서 4.5:1 이상 */
 .input-with-btn { display: flex; gap: 8px; }
 .input-with-btn .btn { flex: none; min-height: 46px; }
 .check-line { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
