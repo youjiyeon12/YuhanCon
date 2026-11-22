@@ -15,16 +15,16 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("SELECT c FROM Comment c JOIN FETCH c.member LEFT JOIN FETCH c.parent WHERE c.board.id = :boardId ORDER BY c.id")
     List<Comment> findByBoardWithMember(@Param("boardId") Long boardId);
 
-    boolean existsByParentIdAndDeletedFalse(Long parentId);
+    boolean existsByParentId(Long parentId);
 
     // 게시판 목록의 댓글 수(지운 댓글 제외): [게시글 id, 개수]
     @Query("SELECT c.board.id, COUNT(c) FROM Comment c WHERE c.board.id IN :ids AND c.deleted = false GROUP BY c.board.id")
     List<Object[]> countByBoardIds(@Param("ids") Collection<Long> ids);
 
-    // 답글을 먼저 지워야 부모 댓글을 지울 수 있다(외래키)
+    // 답글이 여러 단계라 부모 연결을 먼저 끊어야 한 번에 지울 수 있다(외래키)
     @Modifying
-    @Query("DELETE FROM Comment c WHERE c.board.id = :boardId AND c.parent IS NOT NULL")
-    void deleteRepliesByBoardId(@Param("boardId") Long boardId);
+    @Query("UPDATE Comment c SET c.parent = null WHERE c.board.id = :boardId")
+    void detachParentsByBoardId(@Param("boardId") Long boardId);
 
     @Modifying
     @Query("DELETE FROM Comment c WHERE c.board.id = :boardId")

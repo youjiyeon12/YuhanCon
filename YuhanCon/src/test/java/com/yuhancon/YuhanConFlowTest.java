@@ -403,7 +403,7 @@ class YuhanConFlowTest {
         var reply1 = commentRepository.findAll().stream().filter(c -> "답글1".equals(c.getContent())).findFirst().orElseThrow();
         mvc.perform(post(url).with(csrf()).with(as(fan2)).param("parentId", reply1.getId().toString()).param("content", "답글2"));
         var reply2 = commentRepository.findAll().stream().filter(c -> "답글2".equals(c.getContent())).findFirst().orElseThrow();
-        assertThat(reply2.getParent().getId()).isEqualTo(top.getId()); // 한 단계만
+        assertThat(reply2.getParent().getId()).isEqualTo(reply1.getId()); // 답글의 답글(여러 단계)
         mvc.perform(post(url).with(csrf()).with(as(fan)).param("content", "   ")).andExpect(flash().attribute("errorMessage", "댓글 내용을 입력하세요."));
         mvc.perform(get("/boardDetail/" + b.getId()).with(as(fan)))
             .andExpect(content().string(containsString("&lt;script&gt;alert(1)&lt;/script&gt;")))
@@ -418,8 +418,10 @@ class YuhanConFlowTest {
         // 삭제된 댓글에는 답글 불가
         mvc.perform(post(url).with(csrf()).with(as(fan)).param("parentId", top.getId().toString()).param("content", "x"))
             .andExpect(flash().attribute("errorMessage", "삭제된 댓글에는 답글을 달 수 없습니다."));
-        // 관리자는 남의 답글도 지울 수 있고, 마지막 답글이 지워지면 삭제 표시된 댓글도 사라진다
+        // 관리자는 남의 답글도 지울 수 있다. 답글이 달린 답글도 삭제 표시만 하고,
+        // 맨 아래 답글이 지워지면 삭제 표시된 조상들이 위로 올라가며 함께 사라진다
         mvc.perform(post("/comment/" + reply1.getId() + "/delete").with(csrf()).with(as(admin)));
+        assertThat(commentRepository.findById(reply1.getId()).orElseThrow().isDeleted()).isTrue();
         assertThat(commentRepository.findById(top.getId())).isPresent();
         mvc.perform(post("/comment/" + reply2.getId() + "/delete").with(csrf()).with(as(fan2)));
         assertThat(commentRepository.count()).isZero();
@@ -445,7 +447,9 @@ class YuhanConFlowTest {
         mvc.perform(post(url).with(csrf()).with(as(fan2)).param("content", "댓글"));
         var top = commentRepository.findAll().get(0);
         mvc.perform(post(url).with(csrf()).with(as(fan)).param("parentId", top.getId().toString()).param("content", "답글"));
-        mvc.perform(get("/boardMain").with(as(fan))).andExpect(content().string(containsString("[2]")));
+        var reply = commentRepository.findAll().stream().filter(c -> "답글".equals(c.getContent())).findFirst().orElseThrow();
+        mvc.perform(post(url).with(csrf()).with(as(fan2)).param("parentId", reply.getId().toString()).param("content", "답글의 답글"));
+        mvc.perform(get("/boardMain").with(as(fan))).andExpect(content().string(containsString("aria-label=\"댓글 3\"")));
         mvc.perform(post("/boardDelete/" + b.getId()).with(csrf()).with(as(fan))).andExpect(redirectedUrl("/boardMain"));
         assertThat(boardRepository.count()).isZero();
         assertThat(commentRepository.count()).isZero();
@@ -503,5 +507,13 @@ class YuhanConFlowTest {
         if (count != null) req.param("seatCount", count);
         if (seats != null) req.param("seats", seats);
         return mvc.perform(req);
+    }
+
+    @Test
+    void securityLogCleansUserInput() {
+        // 아이디 칸에 줄바꿈을 넣어 가짜 기록 줄을 만드는 공격을 막는다
+        assertThat(com.yuhancon.security.SecurityLog.clean("evil\nLOGIN_SUCCESS id=admin01")).doesNotContain("\n");
+        assertThat(com.yuhancon.security.SecurityLog.clean("x".repeat(100))).hasSize(41);
+        assertThat(com.yuhancon.security.SecurityLog.clean(null)).isEqualTo("-");
     }
 }

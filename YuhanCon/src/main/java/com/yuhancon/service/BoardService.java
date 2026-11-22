@@ -24,6 +24,7 @@ import com.yuhancon.repository.BoardRepository;
 import com.yuhancon.repository.CommentRepository;
 import com.yuhancon.web.BoardForm;
 
+import com.yuhancon.security.SecurityLog;
 import lombok.RequiredArgsConstructor;
 
 // 게시판: 누구나(로그인) 쓰고, 본인 글만 고치거나 지운다. 관리자는 모든 글을 고치거나 지울 수 있다.
@@ -92,10 +93,12 @@ public class BoardService {
     @Transactional
     public void delete(Long id, Member member) {
         Board b = getEditable(id, member);
-        commentRepository.deleteRepliesByBoardId(id);
+        commentRepository.detachParentsByBoardId(id);
         commentRepository.deleteByBoardId(id);
         likeRepository.deleteByBoardId(id);
         boardRepository.delete(b);
+        if (member.isAdmin() && !b.getMember().getLoginId().equals(member.getLoginId()))
+            SecurityLog.LOG.info("ADMIN_BOARD_DELETE by={} board={} author={}", member.getLoginId(), id, b.getMember().getLoginId());
     }
 
     // ---------- 댓글·대댓글 ----------
@@ -117,7 +120,7 @@ public class BoardService {
         return m != null && !c.isDeleted() && (m.isAdmin() || c.getMember().getLoginId().equals(m.getLoginId()));
     }
 
-    // parentId가 있으면 그 댓글의 답글. 답글에 답하면 같은 댓글 아래에 붙인다(한 단계만).
+    // parentId가 있으면 그 댓글의 답글. 답글에도 답글을 달 수 있다(단계 제한 없음, 화면 들여쓰기만 3단계까지).
     @Transactional
     public Comment addComment(Long boardId, Long parentId, String rawContent, Member member) {
         Board b = get(boardId);
@@ -129,7 +132,6 @@ public class BoardService {
             Comment parent = commentRepository.findById(parentId)
                 .filter(p -> p.getBoard().getId().equals(boardId))
                 .orElseThrow(() -> new UserFacingException("답글을 달 댓글이 없습니다."));
-            if (parent.getParent() != null) parent = parent.getParent();
             if (parent.isDeleted()) throw new UserFacingException("삭제된 댓글에는 답글을 달 수 없습니다.");
             c.setParent(parent);
         }
@@ -140,23 +142,28 @@ public class BoardService {
         return commentRepository.save(c);
     }
 
-    // 본인 댓글만(관리자는 전부). 답글이 남은 댓글은 "삭제된 댓글"로만 표시하고, 아니면 행을 지운다.
-    // 마지막 답글을 지우면 이미 삭제 표시된 부모 댓글도 함께 지운다. 글 id를 돌려준다.
+    // 본인 댓글만(관리자는 전부). 답글이 달린 댓글은 "삭제된 댓글"로만 표시하고, 아니면 행을 지운다.
+    // 행을 지운 뒤 답글이 없어진 "삭제된 댓글" 조상도 위로 올라가며 지운다. 글 id를 돌려준다.
     @Transactional
     public Long deleteComment(Long commentId, Member member) {
         Comment c = commentRepository.findById(commentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!canDelete(c, member)) throw new AccessDeniedException("본인 댓글만 지울 수 있습니다.");
         Long boardId = c.getBoard().getId();
         Comment parent = c.getParent();
-        if (parent == null && commentRepository.existsByParentIdAndDeletedFalse(c.getId())) {
+        if (member.isAdmin() && !c.getMember().getLoginId().equals(member.getLoginId()))
+            SecurityLog.LOG.info("ADMIN_COMMENT_DELETE by={} comment={} author={}", member.getLoginId(), commentId, c.getMember().getLoginId());
+        if (commentRepository.existsByParentId(c.getId())) {
             c.setDeleted(true);
             c.setContent("");
             return boardId;
         }
         commentRepository.delete(c);
         commentRepository.flush();
-        if (parent != null && parent.isDeleted() && !commentRepository.existsByParentIdAndDeletedFalse(parent.getId())) {
+        while (parent != null && parent.isDeleted() && !commentRepository.existsByParentId(parent.getId())) {
+            Comment up = parent.getParent();
             commentRepository.delete(parent);
+            commentRepository.flush();
+            parent = up;
         }
         return boardId;
     }

@@ -32,6 +32,7 @@ import com.yuhancon.repository.ReserveRepository;
 import com.yuhancon.repository.ReservedSeatRepository;
 import com.yuhancon.web.ConcertForm;
 
+import com.yuhancon.security.SecurityLog;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -246,13 +247,16 @@ public class ConcertService {
         recentRepository.deleteByConcertId(id);
         concertRepository.delete(c);
         imageStorage.delete(c.getImage());
+        if (member.isAdmin()) SecurityLog.LOG.info("ADMIN_CONCERT_DELETE by={} concert={} title={}", member.getLoginId(), id, SecurityLog.clean(c.getTitle()));
     }
 
     @Transactional
     public int approve(Collection<Long> ids, Member admin) {
         requireAdmin(admin);
         if (ids == null || ids.isEmpty()) throw new UserFacingException("승인할 공연을 고르세요.");
-        return concertRepository.approveAll(ids);
+        int n = concertRepository.approveAll(ids);
+        SecurityLog.LOG.info("ADMIN_APPROVE by={} concerts={} approved={}", admin.getLoginId(), ids, n);
+        return n;
     }
 
     @Transactional
@@ -265,6 +269,7 @@ public class ConcertService {
         if (!allowed.containsAll(picked)) throw new UserFacingException("포스터가 있고 끝나지 않은 승인된 공연만 고를 수 있습니다.");
         concertRepository.clearSlides();
         for (int i = 0; i < picked.size(); i++) get(picked.get(i)).setSlideOrder(i + 1);
+        SecurityLog.LOG.info("ADMIN_SLIDES by={} order={}", admin.getLoginId(), picked);
     }
 
     // 좋아요를 누르면 켜고, 다시 누르면 끈다. 켜졌으면 true
