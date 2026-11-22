@@ -18,6 +18,8 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 import com.yuhancon.security.MemberDetailService;
+import com.yuhancon.security.SecurityLog;
+import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import com.yuhancon.service.MemberService;
 
 import lombok.RequiredArgsConstructor;
@@ -52,6 +54,7 @@ public class SecurityConfig {
                 .usernameParameter("loginId")
                 .successHandler((req, res, auth) -> {
                     memberService.recordLoginSuccess(auth.getName()); // 성공하면 실패 횟수를 지운다
+                    SecurityLog.LOG.info("LOGIN_SUCCESS id={} ip={}", auth.getName(), req.getRemoteAddr());
                     toTarget.onAuthenticationSuccess(req, res, auth);
                 })
                 .failureHandler((req, res, ex) -> {
@@ -61,6 +64,8 @@ public class SecurityConfig {
                     // 5번 연속 틀리면 10분 잠근다. 잠긴 동안에는 비밀번호를 확인하지 않고 LockedException이 온다.
                     boolean locked = ex instanceof LockedException
                         || (ex instanceof BadCredentialsException && memberService.recordLoginFailure(id));
+                    SecurityLog.LOG.warn("{} id={} ip={}", ex instanceof LockedException ? "LOGIN_BLOCKED_LOCKED" : locked ? "LOGIN_LOCKED" : "LOGIN_FAILURE",
+                                         SecurityLog.clean(id), req.getRemoteAddr());
                     res.sendRedirect(req.getContextPath() + (locked ? "/login?locked" : "/login?error"));
                 })
                 .permitAll()
@@ -71,7 +76,13 @@ public class SecurityConfig {
                 .tokenValiditySeconds(14 * 24 * 60 * 60)
                 .userDetailsService(memberDetailService)
             )
-            .exceptionHandling(ex -> ex.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login?required")))
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login?required"))
+                .accessDeniedHandler((req, res, denied) -> { // 로그인했지만 권한이 없는 접근(예: 일반 회원의 /admin)
+                    SecurityLog.LOG.warn("ACCESS_DENIED id={} {} {} ip={}", req.getRemoteUser(), req.getMethod(),
+                                         SecurityLog.clean(req.getRequestURI()), req.getRemoteAddr());
+                    new AccessDeniedHandlerImpl().handle(req, res, denied);
+                }))
             .logout(logout -> logout
                 .logoutSuccessUrl("/login?logout")
                 .invalidateHttpSession(true)

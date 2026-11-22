@@ -4,3 +4,13 @@
 .playwright-cli/
 uploaded-images/
 .impeccable/review/
+
+# 보안 기록(logs/security.log)
+logs/
+
+# AI 도구(Claude Code·impeccable 스킬)가 만든 파일은 저장소에 넣지 않는다
+.impeccable/
+.claude/
+CLAUDE.md
+DESIGN.md
+PRODUCT.md

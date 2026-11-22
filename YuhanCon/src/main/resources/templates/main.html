@@ -57,7 +57,9 @@
             th:attr="aria-current=${d.key == today} ? 'date'">
           <span class="dn"><span th:text="${ {'월','화','수','목','금','토','일'}[d.key.dayOfWeek.value - 1] }">월</span><span class="today-tag" th:if="${d.key == today}">오늘</span></span>
           <span class="dd num" th:text="${#temporals.format(d.key, 'dd')}">15</span>
-          <a class="ev" th:each="c : ${d.value}" th:href="@{/concertDetail/{id}(id=${c.id})}" th:text="${c.title}">공연</a>
+          <!-- 하루에 공연이 많아도 칸이 늘어나지 않게 2개까지 보이고 나머지는 개수만 -->
+          <a class="ev" th:each="c, st : ${d.value}" th:if="${st.index < 2}" th:href="@{/concertDetail/{id}(id=${c.id})}" th:text="${c.title}">공연</a>
+          <a class="ev-more" th:if="${d.value.size() > 2}" href="/concertList" th:text="'외 ' + ${d.value.size() - 2} + '개'">외 1개</a>
           <span class="ev-none" th:if="${d.value.isEmpty()}">공연 없음</span>
         </li>
       </ol>

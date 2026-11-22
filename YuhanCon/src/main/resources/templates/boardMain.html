@@ -16,23 +16,24 @@
   <th:block th:replace="~{fragments :: flash}"></th:block>
 
   <p class="empty" th:if="${boardPage.isEmpty()}">아직 글이 없습니다. 첫 글을 남겨 보세요.</p>
-  <div class="table-wrap" th:if="${!boardPage.isEmpty()}">
-    <table class="data-table board-table">
-      <thead><tr><th scope="col" class="no">번호</th><th scope="col">제목</th><th scope="col">작성자</th><th scope="col">날짜</th><th scope="col" class="no">좋아요</th><th scope="col" class="no">조회</th></tr></thead>
-      <tbody>
-        <tr th:each="b : ${boardPage.content}">
-          <td class="no" th:text="${b.id}">1</td>
-          <td class="title"><a th:href="@{/boardDetail/{id}(id=${b.id})}" th:text="${b.title}">제목</a>
-            <span class="reply-count" th:if="${commentCounts[b.id] != null}" th:text="'[' + ${commentCounts[b.id]} + ']'"
-                  th:attr="aria-label='댓글 ' + ${commentCounts[b.id]} + '개'">[0]</span></td>
-          <td th:text="${b.member.name}">작성자</td>
-          <td th:text="${#temporals.format(b.boardAt, 'yyyy.MM.dd')}">날짜</td>
-          <td class="no" th:text="${b.likeCount}">0</td>
-          <td class="no" th:text="${b.cnt}">0</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <ul class="post-list" th:if="${!boardPage.isEmpty()}">
+    <li th:each="b : ${boardPage.content}">
+      <a class="post-card" th:href="@{/boardDetail/{id}(id=${b.id})}">
+        <span class="pc-title"><span th:text="${b.title}">제목</span>
+          <span class="pc-new" th:if="${b.boardAt != null and b.boardAt.isAfter(#temporals.createToday().minusDays(2))}">N</span></span>
+        <span class="pc-excerpt" th:text="${#strings.abbreviate(b.content, 110)}">내용 미리보기</span>
+        <span class="pc-meta">
+          <span class="pc-author"><span class="avatar sm" aria-hidden="true" th:text="${#strings.substring(b.member.name, 0, 1)}">유</span>
+            <b th:text="${b.member.name}">작성자</b> · <span th:text="${#temporals.format(b.boardAt, 'yyyy.MM.dd')}">날짜</span></span>
+          <span class="pc-stats">
+            <span th:attr="aria-label='좋아요 ' + ${b.likeCount}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.4-9.1C1.2 7.9 3.4 4.8 6.6 4.8c2 0 3.5 1.1 4.4 2.6.9-1.5 2.4-2.6 4.4-2.6 3.2 0 5.4 3.1 4 6.6-1.9 4.5-9.4 9.1-9.4 9.1z"/></svg><span th:text="${b.likeCount}">0</span></span>
+            <span th:attr="aria-label='댓글 ' + ${commentCounts[b.id] ?: 0}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span th:text="${commentCounts[b.id] ?: 0}">0</span></span>
+            <span th:attr="aria-label='조회 ' + ${b.cnt}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span th:text="${b.cnt}">0</span></span>
+          </span>
+        </span>
+      </a>
+    </li>
+  </ul>
 
   <nav class="pagination" aria-label="페이지" th:if="${boardPage.totalPages > 1}">
     <a th:if="${boardPage.hasPrevious()}" th:href="@{/boardMain(page=${boardPage.number - 1})}">이전</a>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 기본 콘솔 로그는 그대로 두고, 보안 기록(SECURITY)만 logs/security.log에 날짜별로 30일 보관한다 -->
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/base.xml"/>
+  <appender name="SECURITY_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>logs/security.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>logs/security.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <maxHistory>30</maxHistory>
+    </rollingPolicy>
+    <encoder><charset>UTF-8</charset><pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level %msg%n</pattern></encoder>
+  </appender>
+  <logger name="SECURITY" level="INFO">
+    <appender-ref ref="SECURITY_FILE"/>
+  </logger>
+</configuration>
