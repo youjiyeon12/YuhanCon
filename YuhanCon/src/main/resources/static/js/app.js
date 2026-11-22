@@ -243,4 +243,29 @@
     });
     render();
   });
+
+  // 댓글 "답글" 버튼: 답글 쓰기 칸을 열고 닫는다
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-reply-toggle]');
+    if (!btn) return;
+    const form = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!form) return;
+    const open = form.hidden;
+    form.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    if (open) form.querySelector('textarea').focus();
+  });
+
+  // 접힌 답글 안의 댓글로 이동하면(#comment-12, 오류 후 다시 쓰기) 감싼 "답글 보기"를 모두 연다
+  const reveal = el => {
+    for (let d = el && el.closest('details'); d; d = d.parentElement.closest('details')) d.open = true;
+  };
+  const revealHash = () => {
+    if (!location.hash.startsWith('#comment-')) return;
+    const el = document.getElementById(location.hash.slice(1));
+    if (el) { reveal(el); el.scrollIntoView({ block: 'center' }); }
+  };
+  document.querySelectorAll('.comment-form.reply:not([hidden])').forEach(reveal);
+  revealHash();
+  window.addEventListener('hashchange', revealHash);
 })();

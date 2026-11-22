@@ -10,16 +10,31 @@
   <th:block th:replace="~{fragments :: flash}"></th:block>
   <article class="post">
     <h1 th:text="${board.title}">제목</h1>
-    <p class="post-meta"><b th:text="${board.member.name}">작성자</b> · <span th:text="${#temporals.format(board.boardAt, 'yyyy.MM.dd')}">날짜</span> · 조회 <span th:text="${viewCount}">0</span></p>
+    <div class="post-author">
+      <span class="avatar" aria-hidden="true" th:text="${#strings.substring(board.member.name, 0, 1)}">유</span>
+      <div>
+        <b th:text="${board.member.name}">작성자</b>
+        <p class="muted"><span th:text="${#temporals.format(board.boardAt, 'yyyy.MM.dd')}">날짜</span> · 조회 <span th:text="${viewCount}">0</span></p>
+      </div>
+    </div>
     <!-- th:text는 HTML을 글자로 바꿔 출력하므로 <script>를 써도 실행되지 않는다 -->
     <div class="prose" th:text="${board.content}">내용</div>
-    <form th:action="@{/board/{id}/like(id=${board.id})}" method="post" class="post-like">
-      <button type="submit" class="like-btn" th:classappend="${liked} ? 'on'" th:attr="aria-pressed=${liked}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.4-9.1C1.2 7.9 3.4 4.8 6.6 4.8c2 0 3.5 1.1 4.4 2.6.9-1.5 2.4-2.6 4.4-2.6 3.2 0 5.4 3.1 4 6.6-1.9 4.5-9.4 9.1-9.4 9.1z"/></svg>
-        좋아요 <b th:text="${board.likeCount}">0</b>
-      </button>
-    </form>
+    <div class="post-foot">
+      <form th:action="@{/board/{id}/like(id=${board.id})}" method="post">
+        <button type="submit" class="like-btn" th:classappend="${liked} ? 'on'" th:attr="aria-pressed=${liked}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.4-9.1C1.2 7.9 3.4 4.8 6.6 4.8c2 0 3.5 1.1 4.4 2.6.9-1.5 2.4-2.6 4.4-2.6 3.2 0 5.4 3.1 4 6.6-1.9 4.5-9.4 9.1-9.4 9.1z"/></svg>
+          좋아요 <b th:text="${board.likeCount}">0</b>
+        </button>
+      </form>
+      <div class="post-actions" th:if="${canEdit}">
+        <a class="btn ghost small" th:href="@{/boardEdit/{id}(id=${board.id})}">수정</a>
+        <form th:action="@{/boardDelete/{id}(id=${board.id})}" method="post" class="inline" data-confirm="이 글을 삭제할까요?">
+          <button type="submit" class="btn ghost small danger">삭제</button>
+        </form>
+      </div>
+    </div>
   </article>
+
   <section class="comments" id="comments" aria-labelledby="cm-h">
     <h2 id="cm-h">댓글 <span th:text="${commentCount}">0</span></h2>
 
@@ -32,54 +47,13 @@
 
     <p class="empty" th:if="${comments.isEmpty()}">첫 댓글을 남겨 보세요.</p>
     <ol class="comment-list">
-      <li th:each="c : ${comments}" class="comment" th:id="'comment-' + ${c.id}">
-        <div class="comment-body" th:classappend="${c.deleted} ? 'removed'">
-          <p class="comment-meta" th:unless="${c.deleted}"><b th:text="${c.member.name}">이름</b>
-            <span class="muted" th:text="${#temporals.format(c.createdAt, 'yyyy.MM.dd HH:mm')}">날짜</span></p>
-          <p class="comment-text" th:text="${c.deleted} ? '삭제된 댓글입니다.' : ${c.content}">내용</p>
-          <div class="comment-actions" th:unless="${c.deleted}">
-            <details class="reply-toggle" th:attr="open=${draftParentId == c.id} ? 'open'">
-              <summary>답글</summary>
-              <form class="comment-form reply" th:action="@{/boardDetail/{id}/comment(id=${board.id})}" method="post">
-                <input type="hidden" name="parentId" th:value="${c.id}">
-                <label th:for="'reply-' + ${c.id}" class="sr-only" th:text="${c.member.name} + ' 님 댓글에 답글 쓰기'">답글</label>
-                <textarea th:id="'reply-' + ${c.id}" name="content" rows="2" maxlength="1000" required placeholder="답글을 남겨 보세요"
-                          th:text="${draftParentId == c.id} ? ${commentDraft} : ''"></textarea>
-                <button type="submit" class="btn small">답글 등록</button>
-              </form>
-            </details>
-            <form th:if="${deletableIds.contains(c.id)}" th:action="@{/comment/{id}/delete(id=${c.id})}"
-                  method="post" class="inline" data-confirm="이 댓글을 삭제할까요?">
-              <button type="submit" class="link-btn danger">삭제</button>
-            </form>
-          </div>
-        </div>
-        <ol class="reply-list" th:if="${replies[c.id] != null}">
-          <li th:each="r : ${replies[c.id]}" class="comment reply-item" th:id="'comment-' + ${r.id}">
-            <div class="comment-body">
-              <p class="comment-meta"><span class="reply-mark" aria-hidden="true">↳</span> <b th:text="${r.member.name}">이름</b>
-                <span class="muted" th:text="${#temporals.format(r.createdAt, 'yyyy.MM.dd HH:mm')}">날짜</span></p>
-              <p class="comment-text" th:text="${r.content}">내용</p>
-              <div class="comment-actions">
-                <form th:if="${deletableIds.contains(r.id)}" th:action="@{/comment/{id}/delete(id=${r.id})}"
-                      method="post" class="inline" data-confirm="이 답글을 삭제할까요?">
-                  <button type="submit" class="link-btn danger">삭제</button>
-                </form>
-              </div>
-            </div>
-          </li>
-        </ol>
-      </li>
+      <th:block th:each="c : ${comments}">
+        <li th:replace="~{fragments :: commentNode(${c}, 0)}"></li>
+      </th:block>
     </ol>
   </section>
-
-  <div class="post-actions" th:if="${canEdit}">
-    <a class="btn ghost small" th:href="@{/boardEdit/{id}(id=${board.id})}">수정</a>
-    <form th:action="@{/boardDelete/{id}(id=${board.id})}" method="post" class="inline" data-confirm="이 글을 삭제할까요?">
-      <button type="submit" class="btn ghost small danger">삭제</button>
-    </form>
-  </div>
 </main>
 <footer th:replace="~{fragments :: footer}"></footer>
+
 </body>
 </html>
