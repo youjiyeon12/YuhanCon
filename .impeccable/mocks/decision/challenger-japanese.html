@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>공연 목록 - YuhanCon</title>
+<link href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--red:#D7261E;--line:#D9DCE1;--fill:#F2F3F5;--ink:#111;--sub:#5B6069}
+body{width:1440px;height:900px;overflow:hidden;background:#fff;color:var(--ink);font:12px/1.35 "Gothic A1",sans-serif;letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit;color:inherit}
+/* hairline system: 1px gaps over a gray ground, modules are white */
+.app{display:grid;height:900px;gap:1px;background:var(--line);grid-template-columns:1fr 372px;grid-template-rows:44px 56px 1fr;grid-template-areas:"nav nav" "title title" "list rail"}
+.app>*{background:#fff}
+nav{grid-area:nav;display:flex;align-items:stretch;padding:0 20px;gap:28px}
+.logo{font-size:19px;font-weight:800;letter-spacing:-.03em;display:flex;align-items:center;margin-right:12px}
+.logo i{font-style:normal;color:var(--red)}
+nav a.m{display:flex;align-items:center;font-size:13px;font-weight:500;border-bottom:3px solid transparent;padding-top:3px}
+nav a.m.on{border-color:var(--red);font-weight:700}
+nav .out{margin-left:auto;align-self:center;font-size:12px;border:1px solid var(--line);padding:4px 10px;background:#fff}
+.title{grid-area:title;display:flex;align-items:center;padding:0 20px;gap:10px}
+.title h1{font-size:22px;font-weight:800;letter-spacing:-.03em}
+.title .cnt{color:var(--sub);font-size:12px;margin-top:4px}
+.title .ctl{margin-left:auto;display:flex;gap:6px;align-items:center}
+.title input,.title select{height:30px;border:1px solid #B9BEC6;padding:0 8px;background:#fff}
+.title input{width:240px}
+.btn{height:30px;padding:0 14px;border:1px solid var(--ink);background:var(--ink);color:#fff;font-weight:700;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--ink);border-color:#B9BEC6}
+/* module header tab */
+.mh{display:flex;align-items:stretch;height:28px;border-bottom:1px solid var(--line);background:var(--fill)}
+.mh b{background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:0 12px;display:flex;align-items:center}
+.mh span{display:flex;align-items:center;padding:0 12px;color:var(--sub);border-right:1px solid var(--line)}
+.mh em{margin-left:auto;font-style:normal;color:var(--sub);display:flex;align-items:center;padding:0 10px;font-size:11px}
+.list{grid-area:list;display:grid;grid-template-rows:28px 26px repeat(4,1fr)}
+.row{display:grid;grid-template-columns:44px 208px 1fr 150px 170px 92px 108px;align-items:center;border-bottom:1px solid var(--line)}
+.row>*{padding:0 12px}
+.row.hd{background:#fff;color:var(--sub);font-size:11px;font-weight:700;border-bottom:1px solid #B9BEC6}
+.row.hd>*{border-right:1px solid var(--line);height:100%;display:flex;align-items:center}
+.row.hd>*:last-child{border:0}
+.no{color:var(--sub);font-weight:700;text-align:center}
+.th{padding:0!important;height:100%;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.th img{display:block;width:100%;height:100%;object-fit:cover}
+.nm{font-size:16px;font-weight:800;letter-spacing:-.03em;line-height:1.25}
+.vn{color:var(--sub);margin-top:4px}
+.dt{font-weight:700;font-size:13px}
+.dt small{display:block;color:var(--sub);font-weight:400;font-size:11px;margin-top:2px}
+.seat b{font-size:15px;font-weight:800}
+.seat .bar{height:4px;background:var(--line);margin-top:6px}
+.seat .bar i{display:block;height:100%;background:var(--ink)}
+.seat small{color:var(--sub);font-size:11px}
+.bd{display:inline-block;font-size:11px;font-weight:700;padding:2px 6px;border:1px solid var(--red);color:var(--red)}
+.bd.hot{background:var(--red);color:#fff}
+.bd.out{background:var(--line);border-color:var(--line);color:#3A3F47}
+.row .btn{width:100%;height:28px;padding:0}
+.row .btn:disabled{background:var(--fill);border-color:var(--line);color:#9AA0A8;cursor:default}
+.soldout .nm,.soldout .dt{color:#6B7079}
+.rail{grid-area:rail;display:grid;gap:1px;background:var(--line);grid-template-rows:auto auto 1fr auto}
+.rail>section{background:#fff}
+.urg{display:grid;grid-template-columns:132px 1fr;gap:12px;padding:12px}
+.urg img{width:132px;height:96px;object-fit:cover;display:block;border:1px solid var(--line)}
+.urg .nm{font-size:14px}
+.urg .left{color:var(--red);font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:6px}
+.urg .left small{font-size:12px;font-weight:700}
+.urg .btn{grid-column:1/-1;width:100%;background:var(--red);border-color:var(--red)}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+.stat div{background:#fff;padding:10px 12px}
+.stat div span{color:var(--sub);font-size:11px;display:block}
+.stat div b{font-size:22px;font-weight:800;letter-spacing:-.03em}
+.stat div b.r{color:var(--red)}
+.posts{list-style:none}
+.posts li{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px;font-weight:500}
+.posts li:before{content:"";width:4px;height:4px;background:var(--ink);flex:none}
+.posts+.more{padding:10px 12px}
+.posts+.more .btn{width:100%}
+.guide{list-style:none;padding:8px 12px 12px}
+.guide li{display:flex;gap:8px;padding:5px 0;border-bottom:1px dotted var(--line);color:#2A2E35}
+.guide li:last-child{border:0}
+.guide li b{color:var(--red);font-weight:800;flex:none;width:14px}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav>
+    <a class="logo" href="#">Yuhan<i>Con</i></a>
+    <a class="m" href="#">홈</a>
+    <a class="m on" href="#">공연정보</a>
+    <a class="m" href="#">게시판</a>
+    <a class="m" href="#">마이페이지</a>
+    <a class="out" href="#">로그아웃</a>
+  </nav>
+
+  <div class="title">
+    <h1>공연 목록</h1><span class="cnt">총 4건</span>
+    <div class="ctl">
+      <input type="search" placeholder="공연명, 공연장 검색">
+      <select><option>공연일 빠른 순</option><option>남은 좌석 적은 순</option></select>
+      <button class="btn ghost">검색</button>
+      <button class="btn">공연 등록</button>
+    </div>
+  </div>
+
+  <main class="list">
+    <div class="mh"><b>전체 4</b><span>예매중 3</span><span>매진 1</span><em>2026.12 – 2027.01</em></div>
+    <div class="row hd"><div>번호</div><div>이미지</div><div>공연명 · 공연장</div><div>일시</div><div>좌석</div><div>상태</div><div>예매</div></div>
+    <div class="row">
+      <div class="no">1</div>
+      <div class="th"><img src="http://localhost:8080/images/aespa.jpg" alt="aespa 월드투어 SYNK"></div>
+      <div><p class="nm">aespa 월드투어 SYNK</p><p class="vn">KSPO DOME</p></div>
+      <div class="dt">2026-12-20<small>토요일</small></div>
+      <div class="seat"><b>남은 87석</b> <small>/ 총 120석</small><div class="bar"><i style="width:72.5%"></i></div></div>
+      <div><span class="bd">예매중</span></div>
+      <div><button class="btn">예매하기</button></div>
+    </div>
+    <div class="row soldout">
+      <div class="no">2</div>
+      <div class="th"><img src="http://localhost:8080/images/psy.jpg" alt="PSY 흠뻑쇼 2026"></div>
+      <div><p class="nm">PSY 흠뻑쇼 2026</p><p class="vn">잠실종합운동장 주경기장</p></div>
+      <div class="dt">2026-12-27<small>일요일</small></div>
+      <div class="seat"><b>0석</b> <small>남은 좌석 없음</small></div>
+      <div><span class="bd out">매진</span></div>
+      <div><button class="btn" disabled>매진</button></div>
+    </div>
+    <div class="row">
+      <div class="no">3</div>
+      <div class="th"><img src="http://localhost:8080/images/blackpink.jpg" alt="BLACKPINK BORN PINK 앙코르"></div>
+      <div><p class="nm">BLACKPINK BORN PINK 앙코르</p><p class="vn">고척스카이돔</p></div>
+      <div class="dt">2027-01-10<small>일요일</small></div>
+      <div class="seat"><b style="color:var(--red)">남은 12석</b></div>
+      <div><span class="bd hot">마감임박</span></div>
+      <div><button class="btn">예매하기</button></div>
+    </div>
+    <div class="row">
+      <div class="no">4</div>
+      <div class="th"><img src="http://localhost:8080/images/concert.jpg" alt="유한대 축제 밴드 공연"></div>
+      <div><p class="nm">유한대 축제 밴드 공연</p><p class="vn">유한대학교 대운동장</p></div>
+      <div class="dt">2027-01-24<small>일요일</small></div>
+      <div class="seat"><b>남은 50석</b></div>
+      <div><span class="bd">예매중</span></div>
+      <div><button class="btn">예매하기</button></div>
+    </div>
+  </main>
+
+  <aside class="rail">
+    <section>
+      <div class="mh"><b>마감 임박</b><em>남은 좌석 기준</em></div>
+      <div class="urg">
+        <img src="http://localhost:8080/images/blackpink.jpg" alt="">
+        <div><p class="nm">BLACKPINK BORN PINK 앙코르</p><p class="vn">고척스카이돔 · 2027-01-10 (일)</p><p class="left">12<small>석 남음</small></p></div>
+        <button class="btn">바로 예매하기</button>
+      </div>
+    </section>
+    <section>
+      <div class="mh"><b>예매 현황</b></div>
+      <div class="stat">
+        <div><span>등록 공연</span><b>4</b></div>
+        <div><span>예매중</span><b>3</b></div>
+        <div><span>매진</span><b>1</b></div>
+        <div><span>마감 임박</span><b class="r">1</b></div>
+      </div>
+    </section>
+    <section>
+      <div class="mh"><b>게시판 최근 글</b></div>
+      <ul class="posts">
+        <li>에스파 콘서트 같이 가실 분</li>
+        <li>흠뻑쇼 준비물 정리</li>
+      </ul>
+      <div class="more"><button class="btn ghost">게시판 가기</button></div>
+    </section>
+    <section>
+      <div class="mh"><b>이용 안내</b></div>
+      <ul class="guide">
+        <li><b>1</b>한 번에 1석부터 6석까지 예매할 수 있습니다.</li>
+        <li><b>2</b>예매 취소는 마이페이지에서 할 수 있습니다.</li>
+        <li><b>3</b>취소한 좌석은 바로 다시 예매 가능 좌석이 됩니다.</li>
+      </ul>
+    </section>
+  </aside>
+</div>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<!-- 모든 화면이 함께 쓰는 조각: 머리말, 메뉴, 안내 메시지, 바닥글. CSP 때문에 인라인 스크립트·스타일은 쓰지 않는다. -->
+<head th:fragment="head(title)">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${title} + ' · YuhanCon'">YuhanCon</title>
+  <meta name="description" content="학교 공연부터 버스킹·콘서트까지, 가까운 무대를 찾고 예매하는 공연 플랫폼 YuhanCon">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/app.js" defer></script>
+</head>
+<body>
+
+<a th:fragment="skip" class="skip-link" href="#main">본문 바로가기</a>
+
+<nav th:fragment="nav(active, dark)" class="nav" th:classappend="${dark} ? 'on-dark'" aria-label="주 메뉴">
+  <a href="/main" class="logo">YuhanCon</a>
+  <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="nav-panel" aria-label="메뉴 열기">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+  <div class="nav-panel" id="nav-panel">
+    <div class="nav-menu">
+      <a href="/main" th:attr="aria-current=${active == 'home'} ? 'page'">홈</a>
+      <a href="/concertList" th:attr="aria-current=${active == 'concert'} ? 'page'">공연 정보</a>
+      <a href="/boardMain" th:attr="aria-current=${active == 'board'} ? 'page'">게시판</a>
+      <a href="/mypage" th:if="${me != null}" th:attr="aria-current=${active == 'mypage'} ? 'page'">마이페이지</a>
+      <a href="/admin" th:if="${me != null and me.admin}" th:attr="aria-current=${active == 'admin'} ? 'page'">관리자</a>
+    </div>
+    <div class="nav-account">
+      <th:block th:if="${me == null}">
+        <a href="/login">로그인</a>
+        <a href="/signup" class="nav-cta">회원가입</a>
+      </th:block>
+      <th:block th:if="${me != null}">
+        <span class="nav-user"><b th:text="${me.name}">이름</b> 님 · <span th:text="${me.role.label}">일반 사용자</span></span>
+        <form th:action="@{/logout}" method="post" class="inline"><button type="submit" class="link-btn">로그아웃</button></form>
+      </th:block>
+    </div>
+  </div>
+</nav>
+
+<th:block th:fragment="flash">
+  <p class="flash success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
+  <p class="flash error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}"></p>
+</th:block>
+
+<footer th:fragment="footer" class="site-foot">
+  <p><strong>YuhanCon.</strong> 학교 공연부터 버스킹·콘서트까지, 가까운 무대를 찾고 예매하는 공연 플랫폼</p>
+  <p>함께 갈 사람은 게시판에서 찾아보세요.</p>
+</footer>
+
+<!-- 공연 카드(입장권 모양). liked: 좋아요한 공연 id 집합, back: 좋아요 후 돌아갈 화면 -->
+<article th:fragment="ticket(c, liked, back)" class="tk" th:attr="data-category=${c.category}">
+  <a class="tk-link" th:href="@{/concertDetail/{id}(id=${c.id})}">
+    <span class="tk-img">
+      <img th:if="${c.image}" th:src="${c.image}" alt="" loading="lazy">
+      <span th:unless="${c.image}" class="tk-noimg" th:text="${c.categoryName}">분류</span>
+    </span>
+    <span class="tk-body">
+      <span class="tk-cat" th:text="${c.categoryName}">콘서트</span>
+      <span class="tk-date num" th:text="${#temporals.format(c.date, 'MM.dd')}">12.20</span>
+      <span class="tk-title" th:text="${c.title}">제목</span>
+      <span class="tk-place" th:text="${c.place}">장소</span>
+      <span class="tk-state sold" th:if="${c.soldOut}">매진</span>
+    </span>
+  </a>
+  <form th:if="${me != null}" th:action="@{/concert/{id}/like(id=${c.id})}" method="post" class="tk-like">
+    <input type="hidden" name="back" th:value="${back}">
+    <button type="submit" class="heart" th:classappend="${liked.contains(c.id)} ? 'on'"
+            th:attr="aria-pressed=${liked.contains(c.id)}, aria-label=${c.title} + ' 좋아요'">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.4-9.1C1.2 7.9 3.4 4.8 6.6 4.8c2 0 3.5 1.1 4.4 2.6.9-1.5 2.4-2.6 4.4-2.6 3.2 0 5.4 3.1 4 6.6-1.9 4.5-9.4 9.1-9.4 9.1z"/></svg>
+      <span th:text="${c.likeCount}">0</span>
+    </button>
+  </form>
+  <span th:if="${me == null}" class="heart static" th:attr="aria-label='좋아요 ' + ${c.likeCount}">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.4-9.1C1.2 7.9 3.4 4.8 6.6 4.8c2 0 3.5 1.1 4.4 2.6.9-1.5 2.4-2.6 4.4-2.6 3.2 0 5.4 3.1 4 6.6-1.9 4.5-9.4 9.1-9.4 9.1z"/></svg>
+    <span th:text="${c.likeCount}">0</span>
+  </span>
+</article>
+
+<!-- 좌석표. taken: 막힌 좌석, picked: 미리 고른 좌석 -->
+<div th:fragment="seatmap(concert, taken, picked, max)" class="seatmap" th:attr="data-max=${max}">
+  <div class="stagebar">STAGE</div>
+  <div class="seat-rows">
+    <div class="seat-row" th:each="row : ${concert.seatRows}">
+      <span class="row-name" th:text="${row.key}">A</span>
+      <span class="row-seats">
+        <label class="seat" th:each="i : ${#numbers.sequence(1, row.value)}"
+               th:with="label=${row.key + i}" th:classappend="${taken.contains(label)} ? 'taken'">
+          <input type="checkbox" name="seats" th:value="${label}"
+                 th:disabled="${taken.contains(label)}" th:checked="${picked.contains(label)}">
+          <span class="sr-only" th:text="${label} + (${taken.contains(label)} ? ' 예매됨' : '')">A1</span>
+        </label>
+      </span>
+    </div>
+  </div>
+  <div class="legend"><span><i class="lg-free"></i>선택 가능</span><span><i class="lg-pick"></i>내 선택</span><span><i class="lg-taken"></i>예매됨</span></div>
+</div>
+
+</body>
+</html>

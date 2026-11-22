@@ -1,13 +1,11 @@
 package com.yuhancon.repository;
 
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.yuhancon.domain.Member;
+import com.yuhancon.domain.Role;
 
-public interface MemberRepository extends JpaRepository<Member, Long> {
-	Optional<Member> findByEmail(String email);
-	
+public interface MemberRepository extends JpaRepository<Member, String> {
+    boolean existsByEmail(String email);
+    boolean existsByRole(Role role);
 }

@@ -1,1 +1,6 @@
 /.metadata/
+
+# 브라우저 자동화 기록, 사용자가 올린 포스터, 디자인 검수 스크린샷은 저장소에 넣지 않는다
+.playwright-cli/
+uploaded-images/
+.impeccable/review/

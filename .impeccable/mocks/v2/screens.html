@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>다른 화면 시안</title><link rel="stylesheet" href="base.css">
+<style>
+.scr{margin:40px 0 0}.scr>h3{font-size:13px;letter-spacing:.12em;color:var(--ink-3);margin:0 0 14px}
+.frame{background:var(--ground);border:1px solid var(--line);border-radius:20px;padding:clamp(16px,3vw,36px)}
+.ph{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
+.ph h1{font-size:clamp(28px,3.4vw,44px);letter-spacing:-.04em;margin:0}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:22px 0}
+.bar select{height:34px;border-radius:999px;border:1px solid var(--line);padding:0 12px;background:var(--paper);font:inherit;font-size:14px;margin-left:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.past{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.past div{background:var(--paper);border-radius:10px;padding:12px;font-size:13px;color:var(--ink-3);background-image:radial-gradient(var(--line) 1px,transparent 1.2px);background-size:6px 6px}
+.past b{display:block;color:var(--ink-2);font-size:14px}
+/* 상세 */
+.detail{display:grid;grid-template-columns:minmax(220px,340px) 1fr;gap:clamp(20px,3vw,40px)}
+.detail .poster{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:14px}
+.detail h2{font-size:clamp(26px,3vw,38px);letter-spacing:-.035em;margin:6px 0}
+.info{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;font-size:15px;margin:18px 0 24px}.info dt{color:var(--ink-3)}.info dd{margin:0;font-weight:600}
+.seat{background:var(--paper);border-radius:16px;padding:20px}
+.stagebar{height:26px;border-radius:0 0 40px 40px;background:var(--ink);color:#fff;font-size:12px;display:grid;place-items:center;margin:0 auto 18px;width:70%}
+.row{display:flex;align-items:center;gap:6px;justify-content:center;margin-bottom:6px}.row span{width:20px;font-size:12px;color:var(--ink-3)}
+.s{width:22px;height:22px;border-radius:6px 6px 3px 3px;border:1.5px solid var(--line);background:var(--paper)}
+.s.taken{background:repeating-linear-gradient(45deg,var(--line) 0 2px,transparent 2px 5px);border-color:var(--line)}
+.s.pick{background:var(--accent);border-color:var(--accent)}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--ink-3);justify-content:center;margin:14px 0}.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px;border:1.5px solid var(--line)}
+.sum{display:flex;justify-content:space-between;align-items:center;border-top:2px dashed var(--line);padding-top:16px;margin-top:8px}
+/* 마이페이지 티켓 */
+.mt{display:grid;grid-template-columns:1fr 180px;background:var(--paper);border-radius:18px;overflow:hidden;max-width:760px;box-shadow:0 10px 30px -16px rgba(20,22,27,.3)}
+.mt .l{padding:24px 26px}.mt .r{border-left:2px dashed var(--line);padding:24px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--accent-soft)}
+.mt .lbl{font-size:12px;color:var(--ink-3);letter-spacing:.08em}
+.mt h4{font-size:22px;letter-spacing:-.03em;margin:4px 0 16px}
+.mt .kv{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.mt .kv b{display:block;font-size:20px;margin-top:2px}
+.mt .acts{display:flex;gap:8px;margin-top:20px}.mt .acts a{font-size:14px;height:38px;padding:0 16px}
+.qr{width:92px;height:92px;background:conic-gradient(var(--ink) 25%,transparent 0 50%,var(--ink) 0 75%,transparent 0) 0 0/16px 16px;border-radius:6px;opacity:.85}
+@media(max-width:720px){.detail{grid-template-columns:1fr}.mt{grid-template-columns:1fr}.mt .r{border-left:0;border-top:2px dashed var(--line);flex-direction:row}}
+</style></head><body>
+<nav class="nav"><a class="logo">YuhanCon</a><div class="menu"><a>홈</a><a aria-current="page">공연 정보</a><a>게시판</a><a>마이페이지</a></div><div class="acct"><a>내 정보</a><a>로그아웃</a></div><svg class="burger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></nav>
+<div class="wrap">
+<section class="scr"><h3>① 공연 정보 — 분류 칩 + 정렬 + 좋아요 + 지난 공연 8개</h3><div class="frame">
+  <div class="ph"><h1>공연 정보</h1><a class="btn">+ 공연 등록</a></div>
+  <div class="bar"><button class="chip" aria-pressed="true">전체</button><button class="chip">콘서트</button><button class="chip">학교공연</button><button class="chip">버스킹</button><button class="chip">기타</button><select><option>공연 가까운 순</option><option>최신 등록순</option><option>오래된 순</option><option>좋아요 순</option></select></div>
+  <div class="grid" id="g"></div>
+  <h2 class="sec" style="font-size:20px;margin-top:36px">지난 공연</h2>
+  <div class="past" id="past"></div>
+</div></section>
+
+<section class="scr"><h3>② 공연 상세 — 좌석 직접 선택(좌석 지정 공연)</h3><div class="frame"><div class="detail">
+  <img class="poster" src="../../../YuhanCon/src/main/resources/static/images/aespa.jpg" alt="">
+  <div><span class="chip" style="height:26px;font-size:12px;background:var(--accent-soft);color:var(--accent);border:0">콘서트</span>
+    <h2>aespa LIVE TOUR – SYNK</h2>
+    <dl class="info"><dt>일시</dt><dd>2026. 12. 20 (토)</dd><dt>장소</dt><dd>KSPO DOME</dd><dt>남은 좌석</dt><dd>38 / 60석</dd><dt>좋아요</dt><dd><span class="heart" style="color:var(--stamp)" id="h"></span></dd></dl>
+    <div class="seat"><div class="stagebar">STAGE</div><div id="seats"></div>
+      <div class="legend"><span><i></i>선택 가능</span><span><i style="background:var(--accent);border-color:var(--accent)"></i>내 선택</span><span><i style="background:repeating-linear-gradient(45deg,var(--line) 0 2px,transparent 2px 4px)"></i>예매됨</span></div>
+      <div class="sum"><div><b>B열 5, 6</b> · 2석 <span style="color:var(--ink-3);font-size:13px">(1인 최대 6석)</span></div><a class="btn">예매하기</a></div>
+    </div></div>
+</div></div></section>
+
+<section class="scr"><h3>③ 마이페이지 예매 내역 — 티켓으로 보기</h3><div class="frame">
+  <div class="mt"><div class="l"><div class="lbl">YUHANCON TICKET · 콘서트</div><h4>aespa LIVE TOUR – SYNK</h4>
+    <div class="kv"><div><span class="lbl">일자</span><b class="num">12.20</b></div><div><span class="lbl">좌석</span><b>B5 · B6</b></div><div><span class="lbl">매수</span><b>2석</b></div></div>
+    <div class="acts"><a class="btn ghost">공연 정보 보기</a><a class="btn ghost">예매 수정</a><a class="btn ghost" style="color:var(--stamp)">예매 취소</a></div></div>
+    <div class="r"><div class="qr"></div><span class="lbl">예매번호 YC-000128</span></div></div>
+</div></section>
+</div>
+<footer class="foot"><b>YuhanCon.</b> 학교 공연부터 버스킹·콘서트까지, 가까운 무대를 찾고 예매하는 공연 플랫폼<br>함께 갈 사람은 게시판에서 찾아보세요.</footer>
+<div class="tag">다른 화면 시안 (공통 적용 스타일)</div>
+<script src="data.js"></script><script>
+document.getElementById('g').innerHTML=SHOWS.slice(0,3).map(TK).join('');
+document.getElementById('past').innerHTML=Array.from({length:8},(_,i)=>`<div><b>지난 공연 ${i+1}</b>2026.${String(11-i%3).padStart(2,'0')}.${10+i} · 종료</div>`).join('');
+document.getElementById('h').innerHTML=HEART.replace('fill="none"','fill="currentColor"')+' 128';
+const taken=new Set(['A1','A2','A7','B1','C3','C4','C5','D8']),pick=new Set(['B5','B6']);
+document.getElementById('seats').innerHTML='ABCD'.split('').map(r=>`<div class="row"><span>${r}</span>${Array.from({length:10},(_,i)=>{const k=r+(i+1);return `<i class="s${taken.has(k)?' taken':pick.has(k)?' pick':''}"></i>`}).join('')}</div>`).join('');
+</script></body></html>

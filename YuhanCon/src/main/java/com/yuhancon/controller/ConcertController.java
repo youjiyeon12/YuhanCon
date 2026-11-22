@@ -1,13 +1,7 @@
 package com.yuhancon.controller;
 
-import java.io.File;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.security.Principal;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,187 +10,152 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.yuhancon.domain.Category;
 import com.yuhancon.domain.Concert;
 import com.yuhancon.domain.Member;
-import com.yuhancon.domain.RecentConcertView;
-import com.yuhancon.repository.ConcertRepository;
-import com.yuhancon.repository.MemberRepository;
-import com.yuhancon.repository.RecentConcertViewRepository;
-import com.yuhancon.repository.ReserveRepository;
+import com.yuhancon.service.ConcertService;
+import com.yuhancon.service.MemberService;
+import com.yuhancon.service.ReserveService;
+import com.yuhancon.service.UserFacingException;
+import com.yuhancon.web.ConcertForm;
 
-import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Controller
+@RequiredArgsConstructor
 public class ConcertController {
 
-    @Autowired
-    private ConcertRepository concertRepository;
+    private final ConcertService concertService;
+    private final ReserveService reserveService;
+    private final MemberService memberService;
 
-    @Autowired
-    private ReserveRepository reserveRepository;
-    
-    @Autowired
-    private RecentConcertViewRepository recentConcertViewRepository;
-
-    @Autowired
-    private MemberRepository memberRepository;
-    
-    // 이미지 파일 저장 메서드
-    public String saveImage(MultipartFile imageFile) throws IOException {
-        if (imageFile.isEmpty()) return null;
-
-        String originalName = imageFile.getOriginalFilename();
-        String extension = originalName.substring(originalName.lastIndexOf("."));
-        String fileName = System.currentTimeMillis() + "_" + UUID.randomUUID() + extension;
-        fileName = fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
-
-        // 실시간 반영 가능한 외부 폴더
-        String uploadDir = System.getProperty("user.dir") + "/uploaded-images";
-        File saveFile = new File(uploadDir, fileName);
-        
-        if (!saveFile.getParentFile().exists()) {
-            saveFile.getParentFile().mkdirs();
-        }
-
-        imageFile.transferTo(saveFile);
-
-        // 경로 리턴은 브라우저가 접근할 수 있게
-        return "/uploaded-images/" + fileName;
+    private Member me(Principal p) {
+        return p == null ? null : memberService.get(p.getName());
     }
 
-
-    // 공연 목록
     @GetMapping("/concertList")
-    public String showConcertList(Model model) {
-        model.addAttribute("concertList", concertRepository.findAll());
+    public String list(@RequestParam(required = false) String category,
+                       @RequestParam(defaultValue = "latest") String sort,
+                       Model model, Principal principal) {
+        Category cat = parseCategory(category);
+        Member me = me(principal);
+        model.addAttribute("concerts", concertService.upcoming(cat, sort));
+        model.addAttribute("pastConcerts", concertService.pastTop8());
+        model.addAttribute("categories", Category.values());
+        model.addAttribute("category", cat);
+        model.addAttribute("sort", sort);
+        model.addAttribute("likedIds", concertService.likedIds(me));
+        if (me != null && me.canManageConcerts()) {
+            model.addAttribute("myPending", concertService.mine(me).stream().filter(c -> !c.isApproved()).toList());
+        }
         return "concertList";
     }
 
-    // 공연 등록 폼
-    @GetMapping("/concertWrite")
-    public String showConcertForm(Model model) {
-        model.addAttribute("concert", new Concert());
-        return "concertWrite";
-    }
-
-    // 공연 저장 처리
-    @PostMapping("/concert/save")
-    public String saveConcert(
-            @ModelAttribute Concert concert,
-            @RequestParam("imageFile") MultipartFile imageFile,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
+    private static Category parseCategory(String s) {
+        if (s == null || s.isBlank()) return null;
         try {
-            concert.setAvailableSeats(concert.getTotalSeats());
-
-            if (userDetails != null) {
-                Member member = memberRepository.findByEmail(userDetails.getUsername())
-                        .orElseThrow();
-                concert.setMember(member);
-            }
-
-            String savedPath = saveImage(imageFile);
-            if (savedPath != null) {
-                concert.setImage(savedPath);
-            }
-
-            concertRepository.save(concert);
-        } catch (Exception e) {
-            e.printStackTrace();
+            return Category.valueOf(s);
+        } catch (IllegalArgumentException e) {
+            return null; // 모르는 분류면 전체
         }
-
-        return "redirect:/concertList";
     }
 
-
-    // 공연 상세 보기
     @GetMapping("/concertDetail/{id}")
-    @Transactional
-    public String showConcertDetail(@PathVariable Long id,
-                                    Model model,
-                                    @AuthenticationPrincipal UserDetails userDetails) {
-
-        Concert concert = concertRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("해당 공연이 없습니다. id=" + id));
-        model.addAttribute("concert", concert);
-
-        boolean isOwner = false;
-
-        if (userDetails != null && concert.getMember() != null) {
-            String loginEmail = userDetails.getUsername();
-            String writerEmail = concert.getMember().getEmail();
-            isOwner = loginEmail.equals(writerEmail);
-        }
-
-        model.addAttribute("isOwner", isOwner);
-        
-        // 로그인된 사용자만 기록
-        if (userDetails != null) {
-            Member member = memberRepository.findByEmail(userDetails.getUsername()).orElseThrow();
-
-            // 중복 저장 방지: 동일 공연 이미 본 기록 있으면 삭제
-            recentConcertViewRepository.deleteByMemberAndConcert(member, concert);
-
-            // 새로운 최근본 기록 저장
-            RecentConcertView view = new RecentConcertView();
-            view.setMember(member);
-            view.setConcert(concert);
-            view.setViewedAt(LocalDateTime.now());
-            recentConcertViewRepository.save(view);
-        }
-
+    public String detail(@PathVariable Long id, Model model, Principal principal) {
+        Member me = me(principal);
+        Concert c = concertService.getVisible(id, me);
+        model.addAttribute("concert", c);
+        model.addAttribute("canEdit", ConcertService.canEdit(c, me));
+        model.addAttribute("liked", concertService.likedIds(me).contains(id));
+        model.addAttribute("myReserve", reserveService.find(me, c).orElse(null));
+        model.addAttribute("taken", c.isSeated() ? reserveService.takenSeats(id) : java.util.Set.of());
+        model.addAttribute("maxSeats", ReserveService.MAX_SEATS_PER_MEMBER);
+        if (me != null) concertService.recordView(c, me);
         return "concertDetail";
     }
 
-
-    // 공연 수정 폼
-    @GetMapping("/concertEdit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model) {
-        Concert concert = concertRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("해당 공연이 없습니다."));
-        model.addAttribute("concert", concert);
-        return "concertEdit";
+    @GetMapping("/concertWrite")
+    public String writeForm(Model model) {
+        return form(model, new ConcertForm(), null, null);
     }
 
-    // 공연 수정 처리
-    @PostMapping("/concertEdit/{id}")
-    public String editConcert(
-            @PathVariable Long id,
-            @ModelAttribute Concert updatedConcert,
-            @RequestParam("imageFile") MultipartFile imageFile
-    ) {
-        Concert concert = concertRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("해당 공연이 없습니다."));
-
-        concert.setTitle(updatedConcert.getTitle());
-        concert.setContent(updatedConcert.getContent());
-        concert.setDate(updatedConcert.getDate());
-        concert.setPlace(updatedConcert.getPlace());
-        concert.setTotalSeats(updatedConcert.getTotalSeats());
-        concert.setAvailableSeats(updatedConcert.getAvailableSeats());
-
+    @PostMapping("/concert/save")
+    public String save(@ModelAttribute("form") ConcertForm form, @RequestParam(value = "imageFile", required = false) MultipartFile image,
+                       Principal principal, Model model, RedirectAttributes ra) {
+        Member me = me(principal);
+        Concert c;
         try {
-            String savedPath = saveImage(imageFile);
-            if (savedPath != null) {
-                concert.setImage(savedPath); // 새 이미지 업로드 시에만 덮어씀
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            c = concertService.create(form, image, me);
+        } catch (UserFacingException e) {
+            model.addAttribute("errorMessage", e.getMessage()); // 입력한 내용이 사라지지 않게 폼을 다시 보여 준다
+            return form(model, form, null, null);
         }
-
-        concertRepository.save(concert);
-        return "redirect:/concertList";
+        ra.addFlashAttribute("successMessage", c.isApproved()
+            ? "공연을 등록했습니다."
+            : "공연을 등록했습니다. 관리자가 승인하면 공연 정보에 공개됩니다.");
+        return "redirect:/concertDetail/" + c.getId();
     }
 
-    // 공연 삭제 처리
+    @GetMapping("/concertEdit/{id}")
+    public String editForm(@PathVariable Long id, Model model, Principal principal) {
+        Concert c = concertService.getEditable(id, me(principal));
+        return form(model, ConcertForm.of(c), c, concertService.reservedSeats(id));
+    }
+
+    @PostMapping("/concertEdit/{id}")
+    public String edit(@PathVariable Long id, @ModelAttribute("form") ConcertForm form,
+                       @RequestParam(value = "imageFile", required = false) MultipartFile image,
+                       Principal principal, Model model, RedirectAttributes ra) {
+        Member me = me(principal);
+        try {
+            concertService.update(id, form, image, me);
+        } catch (UserFacingException e) {
+            Concert c = concertService.getEditable(id, me);
+            model.addAttribute("errorMessage", e.getMessage());
+            return form(model, form, c, concertService.reservedSeats(id));
+        }
+        ra.addFlashAttribute("successMessage", "공연 정보를 수정했습니다.");
+        return "redirect:/concertDetail/" + id;
+    }
+
     @PostMapping("/concertDelete/{id}")
-    @Transactional
-    public String deleteConcert(@PathVariable Long id) {
-    	
-    	recentConcertViewRepository.deleteByConcertId(id);
-    	reserveRepository.deleteByConcertId(id);
-    	concertRepository.deleteById(id);
-        return "redirect:/concertList";
+    public String delete(@PathVariable Long id, Principal principal, RedirectAttributes ra,
+                         @RequestParam(defaultValue = "/concertList") String back) {
+        try {
+            concertService.delete(id, me(principal));
+        } catch (UserFacingException e) {
+            ra.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/concertDetail/" + id;
+        }
+        ra.addFlashAttribute("successMessage", "공연을 삭제했습니다.");
+        return "redirect:" + ("/admin".equals(back) ? "/admin" : "/concertList"); // 다른 사이트로 보내지 않도록 정해진 곳만
+    }
+
+    @PostMapping("/concert/{id}/like")
+    public String like(@PathVariable Long id, Principal principal, RedirectAttributes ra,
+                       @RequestParam(defaultValue = "detail") String back) {
+        boolean on;
+        try {
+            on = concertService.toggleLike(id, me(principal));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            on = true; // 두 번 빠르게 눌러 이미 좋아요가 저장된 경우
+        }
+        ra.addFlashAttribute("successMessage", on ? "좋아요한 공연에 담았습니다." : "좋아요를 취소했습니다.");
+        return switch (back) {
+            case "list" -> "redirect:/concertList";
+            case "mypage" -> "redirect:/mypage";
+            case "main" -> "redirect:/main";
+            default -> "redirect:/concertDetail/" + id;
+        };
+    }
+
+    private String form(Model model, ConcertForm form, Concert concert, Integer reserved) {
+        model.addAttribute("form", form);
+        model.addAttribute("concert", concert); // 수정이면 기존 공연, 등록이면 null
+        model.addAttribute("reservedSeats", reserved == null ? 0 : reserved);
+        model.addAttribute("categories", Category.values());
+        return "concertForm";
     }
 }

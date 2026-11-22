@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [
+      ".impeccable/mocks/**"
+    ],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "YuhanCon/src/main/resources/templates/*.html"
+        ],
+        "createdAt": "2026-11-21T11:05:29.215Z"
+      },
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "YuhanCon/src/main/resources/templates/*.html"
+        ],
+        "createdAt": "2026-11-21T11:11:11.741Z"
+      }
+    ]
+  }
+}

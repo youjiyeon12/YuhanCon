@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('페이지를 열 수 없습니다')}"></head>
+<body>
+<a th:replace="~{fragments :: skip}"></a>
+<nav th:replace="~{fragments :: nav('', false)}"></nav>
+<main id="main" class="wrap page error-page">
+  <p class="error-code num" th:text="${status}">404</p>
+  <h1 th:switch="${status}">
+    <span th:case="404">찾는 페이지가 없습니다</span>
+    <span th:case="403">이 페이지를 볼 권한이 없습니다</span>
+    <span th:case="400">요청을 처리할 수 없습니다</span>
+    <span th:case="*">잠시 문제가 생겼습니다</span>
+  </h1>
+  <p th:switch="${status}">
+    <span th:case="404">주소가 바뀌었거나 삭제된 글·공연일 수 있습니다.</span>
+    <span th:case="403">권한이 없는 화면이거나 접속이 만료되었습니다. 본인이 쓴 글·등록한 공연만 고칠 수 있고, 오래 머물렀다면 다시 로그인해 주세요.</span>
+    <span th:case="400">입력한 값의 형식을 확인한 뒤 다시 시도해 주세요.</span>
+    <span th:case="*">잠시 후 다시 시도해 주세요.</span>
+  </p>
+  <a href="/main" class="btn">홈으로 가기</a>
+</main>
+<footer th:replace="~{fragments :: footer}"></footer>
+</body>
+</html>

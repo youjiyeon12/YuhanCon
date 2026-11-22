@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('관리자')}"></head>
+<body>
+<a th:replace="~{fragments :: skip}"></a>
+<nav th:replace="~{fragments :: nav('admin', false)}"></nav>
+
+<main id="main" class="wrap page">
+  <div class="page-head">
+    <h1>관리자</h1>
+    <a class="btn" href="/concertWrite">+ 공연 등록</a>
+  </div>
+  <th:block th:replace="~{fragments :: flash}"></th:block>
+
+  <!-- 1. 공연 승인 -->
+  <section class="panel" aria-labelledby="ap-h">
+    <h2 id="ap-h">승인 대기 공연 <span class="count-pill" th:text="${pending.size()}">0</span></h2>
+    <p class="empty" th:if="${pending.isEmpty()}">승인을 기다리는 공연이 없습니다.</p>
+    <form th:if="${!pending.isEmpty()}" th:action="@{/admin/approve}" method="post">
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th scope="col"><label class="check"><input type="checkbox" data-check-all="ids"><span class="sr-only">전체 선택</span></label></th>
+            <th scope="col">공연</th><th scope="col">분류</th><th scope="col">날짜</th><th scope="col">등록자</th>
+          </tr></thead>
+          <tbody>
+            <tr th:each="c : ${pending}">
+              <td><label class="check"><input type="checkbox" name="ids" th:value="${c.id}"><span class="sr-only" th:text="${c.title} + ' 선택'">선택</span></label></td>
+              <td class="title"><a th:href="@{/concertDetail/{id}(id=${c.id})}" th:text="${c.title}">제목</a></td>
+              <td th:text="${c.categoryName}">분류</td>
+              <td th:text="${#temporals.format(c.date, 'yyyy.MM.dd')}">날짜</td>
+              <td th:text="${c.member.name} + ' (' + ${c.member.loginId} + ')'">등록자</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="form-actions"><button type="submit" class="btn">선택한 공연 승인</button></div>
+    </form>
+  </section>
+
+  <!-- 2. 홈 슬라이드 -->
+  <section class="panel" id="slides" aria-labelledby="sl-h">
+    <h2 id="sl-h">홈 슬라이드</h2>
+    <p class="help">포스터가 있는 다가오는 공연 중에서 최대 <b th:text="${maxSlides}">6</b>개를 고르세요. 고른 공연이 <span th:text="${minSlides}">4</span>개보다 적거나 끝나면, 날짜가 가장 가까운 공연 포스터로 <span th:text="${minSlides}">4</span>개를 채웁니다.</p>
+    <p class="muted">지금 홈에 보이는 순서: <span th:each="s, st : ${slides}"><b th:text="${s.title}">제목</b><span th:unless="${st.last}"> → </span></span><span th:if="${slides.isEmpty()}">없음(기본 사진)</span></p>
+    <p class="empty" th:if="${candidates.isEmpty()}">고를 수 있는 공연이 없습니다.</p>
+    <form th:if="${!candidates.isEmpty()}" th:action="@{/admin/slides}" method="post" data-max-check="ids" th:attr="data-max=${maxSlides}">
+      <ul class="slide-pick">
+        <li th:each="c : ${candidates}">
+          <label>
+            <input type="checkbox" name="ids" th:value="${c.id}" th:checked="${selectedIds.contains(c.id)}" th:attr="data-title=${c.title}">
+            <img th:src="${c.image}" alt="">
+            <span><b th:text="${c.title}">제목</b><span class="muted" th:text="${#temporals.format(c.date, 'yyyy.MM.dd')}">날짜</span></span>
+          </label>
+        </li>
+      </ul>
+      <div class="slide-order" data-slide-order th:attr="data-initial=${#strings.listJoin(selectedIds, ',')}">
+        <h3>홈에 보일 순서</h3>
+        <p class="help">고른 순서대로 홈에 보입니다. 위·아래 버튼으로 순서를 바꿀 수 있습니다.</p>
+        <ol class="order-list" aria-live="polite"></ol>
+        <p class="muted order-empty">고른 공연이 없으면 날짜가 가까운 공연 4개가 보입니다.</p>
+      </div>
+      <div class="form-actions"><span class="muted"><b data-max-count>0</b> / <span th:text="${maxSlides}">6</span> 선택</span><button type="submit" class="btn">슬라이드 저장</button></div>
+    </form>
+  </section>
+
+  <!-- 3. 전체 공연 -->
+  <section class="panel" aria-labelledby="all-h">
+    <h2 id="all-h">전체 공연</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th scope="col">공연</th><th scope="col">상태</th><th scope="col">날짜</th><th scope="col">예매</th><th scope="col">관리</th></tr></thead>
+        <tbody>
+          <tr th:each="c : ${concerts}">
+            <td class="title"><a th:href="@{/concertDetail/{id}(id=${c.id})}" th:text="${c.title}">제목</a></td>
+            <td><span class="badge" th:classappend="${c.approved} ? '' : 'wait'" th:text="${!c.approved} ? '승인 대기' : (${c.past} ? '종료' : '공개')">공개</span></td>
+            <td th:text="${#temporals.format(c.date, 'yyyy.MM.dd')}">날짜</td>
+            <td th:text="${c.totalSeats - c.availableSeats} + ' / ' + ${c.totalSeats}">0 / 0</td>
+            <td class="actions">
+              <a class="link-btn" th:href="@{/concertEdit/{id}(id=${c.id})}">수정</a>
+              <form th:action="@{/concertDelete/{id}(id=${c.id})}" method="post" class="inline"
+                    th:attr="data-confirm='「' + ${c.title} + '」을(를) 삭제할까요? 예매 기록도 함께 지워집니다.'">
+                <input type="hidden" name="back" value="/admin">
+                <button type="submit" class="link-btn danger">삭제</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<footer th:replace="~{fragments :: footer}"></footer>
+</body>
+</html>

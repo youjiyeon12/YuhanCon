@@ -2,6 +2,10 @@ package com.yuhancon.domain;
 
 import java.time.LocalDate;
 
+import org.hibernate.annotations.DynamicUpdate;
+
+import org.hibernate.annotations.ColumnDefault;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -9,29 +13,34 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+// 바뀐 칸만 UPDATE한다(좋아요 수·조회수는 전용 UPDATE 문이 바꾼다).
 @Entity
-@Data
+@DynamicUpdate
+@Getter @Setter @NoArgsConstructor
 public class Board {
-	
-	@Id
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-	
-    private String title;
-    
-    @ManyToOne(fetch = FetchType.LAZY) //다대일 관계 설정
-    @JoinColumn(name = "member_id", nullable= true) //외래키 이름을 명시적으로 설정
-    private Member member;
-    
-    private String content;
-    
-    private LocalDate boardAt;
-    
-    private int cnt = 0;
-    
-    private String image;
-    
 
+    @Column(nullable = false, length = 100)
+    private String title;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String content;
+
+    private LocalDate boardAt;
+
+    private int cnt;
+
+    @ColumnDefault("0") @Column(nullable = false, updatable = false) // BoardRepository.addLikeCount로만 바꾼다
+    private int likeCount;
 }

@@ -1,70 +1,88 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <title>공연 상세</title>
-  <link rel="stylesheet" th:href="@{/css/concertDetail.css}">
-</head>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${concert.title})}"></head>
 <body>
+<a th:replace="~{fragments :: skip}"></a>
+<nav th:replace="~{fragments :: nav('concert', false)}"></nav>
 
-<!-- 네비게이션 -->
-<div class="navbar">
-  <div class="nav-left">
-    <a href="/main" class="logo">YuhanCon</a>
-    <a href="/main">홈</a>
-    <a href="/concertList">공연정보</a>
-    <a href="/boardMain">게시판</a>
-    <a href="/mypage">마이페이지</a>
+<main id="main" class="wrap page">
+  <p class="crumb"><a href="/concertList">← 공연 정보</a></p>
+  <th:block th:replace="~{fragments :: flash}"></th:block>
+  <p class="flash info" th:if="${!concert.approved}">승인 대기 중인 공연입니다. 관리자가 승인하면 공개되고 예매를 받을 수 있습니다.</p>
+
+  <div class="detail">
+    <div class="detail-poster">
+      <img th:if="${concert.image}" th:src="${concert.image}" th:alt="${concert.title} + ' 포스터'">
+      <div th:unless="${concert.image}" class="poster-empty">포스터 준비 중</div>
+    </div>
+
+    <div class="detail-info">
+      <span class="badge" th:text="${concert.categoryName}">콘서트</span>
+      <h1 th:text="${concert.title}">공연 제목</h1>
+      <dl class="info">
+        <dt>일시</dt><dd th:text="${#temporals.format(concert.date, 'yyyy. MM. dd')}">2026. 12. 20</dd>
+        <dt>장소</dt><dd th:text="${concert.place}">장소</dd>
+        <dt th:text="${concert.seated} ? '남은 좌석' : '남은 자리'">남은 좌석</dt>
+        <dd><span th:text="${concert.availableSeats}">0</span> / <span th:text="${concert.totalSeats}">0</span><span th:text="${concert.seated} ? '석 (좌석 지정)' : '석 (자유석)'">석</span></dd>
+        <dt>좋아요</dt>
+        <dd>
+          <form th:if="${me != null}" th:action="@{/concert/{id}/like(id=${concert.id})}" method="post" class="inline">
+            <button type="submit" class="heart big" th:classappend="${liked} ? 'on'" th:attr="aria-pressed=${liked}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.4-9.1C1.2 7.9 3.4 4.8 6.6 4.8c2 0 3.5 1.1 4.4 2.6.9-1.5 2.4-2.6 4.4-2.6 3.2 0 5.4 3.1 4 6.6-1.9 4.5-9.4 9.1-9.4 9.1z"/></svg>
+              <span th:text="${concert.likeCount}">0</span><span class="sr-only">좋아요</span>
+            </button>
+          </form>
+          <span th:if="${me == null}" th:text="${concert.likeCount}">0</span>
+        </dd>
+      </dl>
+      <div class="prose" th:text="${concert.content}">소개</div>
+
+      <div class="owner-actions" th:if="${canEdit}">
+        <a class="btn ghost small" th:href="@{/concertEdit/{id}(id=${concert.id})}">공연 수정</a>
+        <form th:action="@{/concertDelete/{id}(id=${concert.id})}" method="post" class="inline"
+              data-confirm="이 공연을 삭제할까요? 되돌릴 수 없습니다.">
+          <button type="submit" class="btn ghost small danger">공연 삭제</button>
+        </form>
+      </div>
+
+      <!-- 예매 -->
+      <section class="reserve-box" aria-labelledby="rsv-h">
+        <h2 id="rsv-h" class="sr-only">예매</h2>
+        <p class="state-msg" th:if="${concert.past}">종료된 공연입니다.</p>
+        <p class="state-msg" th:if="${!concert.past and !concert.approved}">승인 후 예매할 수 있습니다.</p>
+        <th:block th:if="${!concert.past and concert.approved}">
+          <div th:if="${me == null}" class="state-msg">
+            로그인하면 예매할 수 있습니다. <a class="btn small" href="/login">로그인</a>
+          </div>
+          <div th:if="${me != null and myReserve != null}" class="state-msg">
+            <span th:text="'이미 예매한 공연입니다 (' + (${myReserve.seats != null} ? ${#strings.replace(myReserve.seats, ',', ', ')} : ${myReserve.seatCount} + '석') + ')'">이미 예매한 공연입니다</span>
+            <a class="btn small" th:href="@{/reserveEdit/{id}(id=${myReserve.id})}">예매 수정</a>
+            <a class="btn ghost small" href="/mypage">마이페이지</a>
+          </div>
+          <p class="state-msg sold" th:if="${me != null and myReserve == null and concert.soldOut}">매진되었습니다.</p>
+          <form th:if="${me != null and myReserve == null and !concert.soldOut}" th:action="@{/reserve}" method="post" class="reserve-form">
+            <input type="hidden" name="concertId" th:value="${concert.id}">
+            <th:block th:if="${concert.seated}">
+              <div th:replace="~{fragments :: seatmap(${concert}, ${taken}, ${ {} }, ${maxSeats})}"></div>
+              <div class="sum">
+                <p><b class="seat-summary" data-empty="좌석을 골라 주세요">좌석을 골라 주세요</b> <span class="muted">(1인 최대 <span th:text="${maxSeats}">6</span>석)</span></p>
+                <button type="submit" class="btn">예매하기</button>
+              </div>
+            </th:block>
+            <div class="sum" th:unless="${concert.seated}">
+              <label class="count">매수
+                <select name="seatCount">
+                  <option th:each="n : ${#numbers.sequence(1, maxSeats)}" th:if="${n <= concert.availableSeats}" th:value="${n}" th:text="${n} + '석'">1석</option>
+                </select>
+              </label>
+              <button type="submit" class="btn">예매하기</button>
+            </div>
+          </form>
+        </th:block>
+      </section>
+    </div>
   </div>
-  <div class="nav-right">
-    <a href="/logout">로그아웃</a>
-  </div>
-</div>
-
-<h1 th:text="${concert.title}">공연 제목</h1>
-<hr class="divider">
-
-<!-- 내용 박스 -->
-<div class="content-box">
-  <p><strong>설명:</strong> <span th:text="${concert.content}"></span></p>
-  <p><strong>장소:</strong> <span th:text="${concert.place}"></span></p>
-  <p><strong>날짜:</strong> <span th:text="${#temporals.format(concert.date, 'yyyy-MM-dd')}"></span></p>
-  <p><strong>총 좌석:</strong> <span th:text="${concert.totalSeats}"></span></p>
-  <p><strong>남은 좌석:</strong> <span th:text="${concert.availableSeats}"></span></p>
-
-  <p th:if="${concert.image != null}">
-    <strong>이미지:</strong><br>
-    <img th:src="@{${concert.image}}" alt="공연 이미지">
-  </p>
-</div>
-
-<!-- 메타 정보 -->
-<div class="meta-info">
-  공연 번호: <span th:text="${concert.id}"></span>
-</div>
-
-<hr class="divider">
-
-<!-- 예매 폼 -->
-<div class="reserve-form">
-  <form th:action="@{/reserve}" method="post">
-    <input type="hidden" name="concertId" th:value="${concert.id}">
-    <label>예매 좌석 수:</label>
-    <input type="number" name="seatCount" min="1" max="6" required>
-    <button type="submit">예매하기</button>
-  </form>
-</div>
-
-<div class="detail-actions">
-  <a th:if="${isOwner}" th:href="@{'/concertEdit/' + ${concert.id}}">수정</a>
-
-  <form th:if="${isOwner}" th:action="@{'/concertDelete/' + ${concert.id}}" method="post" style="display:inline;">
-    <button type="submit" onclick="return confirm('정말 삭제하시겠습니까?')">삭제</button>
-  </form>
-
-  <a th:href="@{/concertList}">목록으로</a>
-</div>
-
-
+</main>
+<footer th:replace="~{fragments :: footer}"></footer>
 </body>
 </html>

@@ -1,41 +1,48 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <title>회원 정보 수정</title>
-  <link rel="stylesheet" href="/css/signup.css">
-</head>
+<head th:replace="~{fragments :: head('회원 정보 수정')}"></head>
 <body>
-  <div class="signup-container">
-    <h2>회원 정보 수정</h2>
-    <form th:action="@{/editMember}" th:object="${member}" method="post">
-  <div class="form-group">
-    <label for="email">이메일</label>
-    <input type="text" th:field="*{email}" id="email" placeholder="이메일" readonly>
-  </div>
+<a th:replace="~{fragments :: skip}"></a>
+<nav th:replace="~{fragments :: nav('mypage', false)}"></nav>
 
-  <div class="form-group">
-    <label for="name">이름</label>
-    <input type="text" th:field="*{name}" id="name" placeholder="이름" required>
-    <div th:if="${#fields.hasErrors('name')}" th:errors="*{name}" style="color:red;"></div>
-  </div>
-
-  <div class="form-group">
-    <label for="password">비밀번호</label>
-    <input type="password" th:field="*{password}" id="password" placeholder="비밀번호" required>
-    <div th:if="${#fields.hasErrors('password')}" th:errors="*{password}" style="color:red;"></div>
-  </div>
-
-  <div class="form-group">
-    <label for="phone">전화번호</label>
-    <input type="text" th:field="*{phone}" id="phone" placeholder="전화번호" required>
-    <div th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}" style="color:red;"></div>
-  </div>
-
-
-  <button type="submit">수정하기</button>
-</form>
-
-  </div>
+<main id="main" class="wrap page auth">
+  <h1>회원 정보 수정</h1>
+  <form class="form-card" th:action="@{/editMember}" th:object="${form}" method="post" novalidate>
+    <p class="req-note"><span class="req" aria-hidden="true">*</span> 표시는 꼭 입력해야 합니다.</p>
+    <div class="field">
+      <label>아이디</label>
+      <p class="static-value" th:text="${me.loginId} + ' · ' + ${me.email}">아이디</p>
+    </div>
+    <div class="field">
+      <label for="name">이름 <span class="req" aria-hidden="true">*</span></label>
+      <input id="name" th:field="*{name}" maxlength="30" required th:attr="aria-invalid=${#fields.hasErrors('name')}">
+      <p class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+    </div>
+    <div class="field">
+      <label for="phone">전화번호 <span class="req" aria-hidden="true">*</span></label>
+      <input type="tel" id="phone" th:field="*{phone}" maxlength="11" inputmode="numeric" required placeholder="- 없이 숫자만"
+             th:attr="aria-invalid=${#fields.hasErrors('phone')}">
+      <p class="field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></p>
+    </div>
+    <div class="field">
+      <label for="newPassword">새 비밀번호</label>
+      <input type="password" id="newPassword" th:field="*{newPassword}" autocomplete="new-password" placeholder="바꾸지 않으려면 비워 두세요"
+             aria-describedby="np-help" th:attr="aria-invalid=${#fields.hasErrors('newPassword')}">
+      <p class="help" id="np-help">비워 두면 지금 비밀번호를 그대로 씁니다. 바꾸려면 영문·숫자 포함 8자 이상</p>
+      <p class="field-error" th:if="${#fields.hasErrors('newPassword')}" th:errors="*{newPassword}"></p>
+    </div>
+    <div class="field">
+      <label for="currentPassword">현재 비밀번호 <span class="req" aria-hidden="true">*</span></label>
+      <input type="password" id="currentPassword" th:field="*{currentPassword}" autocomplete="current-password" required
+             th:attr="aria-invalid=${#fields.hasErrors('currentPassword')}">
+      <p class="field-error" th:if="${#fields.hasErrors('currentPassword')}" th:errors="*{currentPassword}"></p>
+    </div>
+    <div class="form-actions">
+      <a class="btn ghost" href="/mypage">취소</a>
+      <button type="submit" class="btn">저장하기</button>
+    </div>
+  </form>
+</main>
+<footer th:replace="~{fragments :: footer}"></footer>
 </body>
 </html>

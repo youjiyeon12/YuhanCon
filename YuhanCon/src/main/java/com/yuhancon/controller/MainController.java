@@ -1,24 +1,37 @@
 package com.yuhancon.controller;
 
-import java.util.List;
+import java.security.Principal;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import com.yuhancon.domain.Concert;
-import com.yuhancon.repository.ConcertRepository;
+import com.yuhancon.domain.Category;
+import com.yuhancon.service.ConcertService;
+import com.yuhancon.service.MemberService;
+
+import lombok.RequiredArgsConstructor;
 
 @Controller
-public class MainController {	
-	@Autowired
-	private ConcertRepository concertRepository;
+@RequiredArgsConstructor
+public class MainController {
 
-	@GetMapping("/main")
-    public String showMainPage(Model model) {
-        List<Concert> concertList = concertRepository.findTop3ByOrderByDateAsc();
-        model.addAttribute("concertList", concertList);
+    private final ConcertService concertService;
+    private final MemberService memberService;
+
+    @GetMapping("/")
+    public String root() {
+        return "redirect:/main";
+    }
+
+    @GetMapping("/main")
+    public String main(Model model, Principal principal) {
+        model.addAttribute("slides", concertService.slides());
+        model.addAttribute("week", concertService.thisWeek());
+        model.addAttribute("today", java.time.LocalDate.now());
+        model.addAttribute("groups", concertService.homeGroups());
+        model.addAttribute("categories", Category.values());
+        model.addAttribute("likedIds", principal == null ? java.util.Set.of() : concertService.likedIds(memberService.get(principal.getName())));
         return "main";
     }
 }

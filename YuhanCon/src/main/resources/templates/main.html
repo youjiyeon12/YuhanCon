@@ -1,88 +1,88 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>메인화면</title>
-    <link rel="stylesheet" th:href="@{/css/main.css}">
-</head>
-<body>
-<!-- 상단 네비게이션 -->
-<div class="navbar">
-    <div class="nav-left">
-        <a href="/main" class="logo">YuhanCon</a>
-        <a href="/main">홈</a>
-        <a href="/concertList">공연정보</a>
-        <a href="/boardMain">게시판</a>
-        <a href="/mypage">마이페이지</a>
-    </div>
-    <div class="nav-right">
-        <a href="/logout">로그아웃</a>
-    </div>
-</div>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('가까운 무대를 찾고 예매하세요')}"></head>
+<body class="page-home">
+<a th:replace="~{fragments :: skip}"></a>
+<nav th:replace="~{fragments :: nav('home', true)}"></nav>
 
-<!-- 공연 사진 슬라이드 -->
-<div class="slide-container">
-    <div class="slide-button" id="prev">◁</div>
-
-    <div class="slide-wrapper">
-        <div class="slide-images" id="slideImages">
-            <img src="/images/aespa.jpg" alt="공연1">
-            <img src="/images/psy.jpg" alt="공연2">
-            <img src="/images/blackpink.jpg" alt="공연3">
-            <img src="/images/concert.jpg" alt="공연4">
+<main id="main">
+  <!-- 첫 화면: 포스터 슬라이드. 포스터 전체가 보이게(contain) 두고 빈 곳은 같은 포스터를 흐리게 깔아 채운다. 5초마다 넘어가고, 진행 바를 누르면 그 장면부터 5초를 다시 센다. -->
+  <section class="stage" aria-roledescription="carousel" aria-label="추천 공연">
+    <th:block th:if="${!slides.isEmpty()}">
+      <div class="slide" th:each="s, st : ${slides}" th:classappend="${st.first} ? 'on'"
+           th:attr="aria-hidden=${!st.first}, aria-label=${st.count} + ' / ' + ${st.size}" aria-roledescription="slide">
+        <img class="slide-bg" th:src="${s.image}" alt="">
+        <img class="slide-poster" th:src="${s.image}" th:alt="${s.title} + ' 포스터'">
+        <div class="slide-copy">
+          <p class="eyebrow"><span th:text="${s.categoryName}">콘서트</span> · <span th:text="${s.soldOut} ? '매진' : '예매 중'">예매 중</span></p>
+          <p class="slide-date num" th:text="${#temporals.format(s.date, 'MM.dd')}">12.20</p>
+          <h2 class="slide-title" th:text="${s.title}">공연 제목</h2>
+          <p class="slide-place" th:text="${s.place}">장소</p>
+          <a class="btn" th:href="@{/concertDetail/{id}(id=${s.id})}" th:tabindex="${st.first} ? 0 : -1">예매하기</a>
         </div>
+      </div>
+      <div class="stage-bars" th:if="${slides.size() > 1}">
+        <button type="button" class="bar" th:each="s, st : ${slides}" th:classappend="${st.first} ? 'on'"
+                th:attr="aria-label=${st.count} + '번째 공연 보기: ' + ${s.title}, aria-current=${st.first}"><i></i></button>
+      </div>
+    </th:block>
+    <!-- 공연이 하나도 없을 때만 기본 사진 -->
+    <div class="slide on" th:if="${slides.isEmpty()}">
+      <img class="slide-bg" src="/images/concert.jpg" alt="">
+      <img class="slide-poster" src="/images/concert.jpg" alt="공연장 사진">
+      <div class="slide-copy">
+        <p class="eyebrow">YuhanCon</p>
+        <h2 class="slide-title">곧 새로운 무대가 열립니다</h2>
+        <p class="slide-place">공연이 등록되면 이곳에서 가장 먼저 소개해 드릴게요.</p>
+        <a class="btn" href="/concertList">공연 정보 보기</a>
+      </div>
     </div>
+  </section>
 
-    <div class="slide-button" id="next">▷</div>
-    
-<!-- 예매 가능한 공연 목록 -->
-<div class="concert-preview-section">
-  <h2>공연 미리보기</h2>
-  <div class="concert-card-container">
-    <div th:each="concert : ${concertList}" class="concert-card">
-      <a th:href="@{|/concertDetail/${concert.id}|}" class="concert-link">
-        <h3 th:text="${concert.title}">공연 제목</h3>
-        <p th:text="${concert.place}">공연 장소</p>
-        <p th:text="${#temporals.format(concert.date, 'yyyy-MM-dd')}">공연 날짜</p>
-      </a>
-    </div>
+  <div class="wrap">
+    <th:block th:replace="~{fragments :: flash}"></th:block>
+
+    <section class="intro">
+      <h1>오늘 밤, <em>가까운 무대</em>로.</h1>
+      <p>학교 공연부터 버스킹·콘서트까지 한곳에서 찾고, 원하는 자리를 골라 예매하세요. 같이 갈 사람은 게시판에서 구할 수 있습니다.</p>
+    </section>
+
+    <section aria-labelledby="week-h">
+      <div class="sec-head">
+        <h2 id="week-h" class="sec">이번 주 무대</h2>
+        <a href="/concertList">공연 정보 전체 보기 →</a>
+      </div>
+      <ol class="week">
+        <li class="day" th:each="d : ${week}" th:classappend="${!d.value.isEmpty()} ? 'has'"
+            th:attr="aria-current=${d.key == today} ? 'date'">
+          <span class="dn"><span th:text="${ {'월','화','수','목','금','토','일'}[d.key.dayOfWeek.value - 1] }">월</span><span class="today-tag" th:if="${d.key == today}">오늘</span></span>
+          <span class="dd num" th:text="${#temporals.format(d.key, 'dd')}">15</span>
+          <a class="ev" th:each="c : ${d.value}" th:href="@{/concertDetail/{id}(id=${c.id})}" th:text="${c.title}">공연</a>
+          <span class="ev-none" th:if="${d.value.isEmpty()}">공연 없음</span>
+        </li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="up-h">
+      <div class="sec-head">
+        <h2 id="up-h" class="sec">다가오는 공연</h2>
+        <a href="/concertList">더 보기 →</a>
+      </div>
+      <!-- 전체와 분류마다 가까운 공연 최대 4개. 칩을 누르면 그 묶음만 보인다(스크립트가 없으면 전체 묶음만). -->
+      <div class="chips" role="group" aria-label="분류로 거르기" data-group-tabs>
+        <button type="button" class="chip" aria-pressed="true" data-group="ALL">전체</button>
+        <button type="button" class="chip" aria-pressed="false" th:each="cat : ${categories}"
+                th:attr="data-group=${cat.name()}" th:text="${cat.label}">분류</button>
+      </div>
+      <div th:each="g : ${groups}" class="home-group" th:attr="data-group-panel=${g.key}" th:hidden="${g.key != 'ALL'}">
+        <div class="pile" th:if="${!g.value.isEmpty()}">
+          <th:block th:each="c : ${g.value}"><article th:replace="~{fragments :: ticket(${c}, ${likedIds}, 'main')}"></article></th:block>
+        </div>
+        <p class="empty" th:if="${g.value.isEmpty()}" th:text="${g.key == 'ALL'} ? '다가오는 공연이 아직 없습니다.' : '이 분류의 다가오는 공연이 아직 없습니다.'">없음</p>
+      </div>
+    </section>
   </div>
-</div>
-
-</div>
-<!-- 자동 슬라이드용 스크립트 -->
-<script>
-    const slideImages = document.getElementById('slideImages');
-    const slides = slideImages.querySelectorAll('img');
-    let currentIndex = 0;
-
-    function getSlideWidth() {
-        return window.innerWidth; // 화면 너비 기준
-    }
-
-    function showSlide(index) {
-        const slideWidth = getSlideWidth();
-        slideImages.style.transform = `translateX(-${index * slideWidth}px)`;
-    }
-
-    function nextSlide() {
-        currentIndex = (currentIndex + 1) % slides.length;
-        showSlide(currentIndex);
-    }
-
-    function prevSlide() {
-        currentIndex = (currentIndex - 1 + slides.length) % slides.length;
-        showSlide(currentIndex);
-    }
-
-    document.getElementById('next').addEventListener('click', nextSlide);
-    document.getElementById('prev').addEventListener('click', prevSlide);
-
-    setInterval(nextSlide, 4000);
-
-    window.addEventListener('resize', () => showSlide(currentIndex));
-</script>
-
-
+</main>
+<footer th:replace="~{fragments :: footer}"></footer>
 </body>
 </html>

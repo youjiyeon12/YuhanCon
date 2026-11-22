@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${concert == null} ? '공연 등록' : '공연 수정')}"></head>
+<body>
+<a th:replace="~{fragments :: skip}"></a>
+<nav th:replace="~{fragments :: nav('concert', false)}"></nav>
+
+<main id="main" class="wrap page narrow">
+  <h1 th:text="${concert == null} ? '공연 등록' : '공연 수정'">공연 등록</h1>
+  <p class="lead" th:if="${concert == null and !me.admin}">등록한 공연은 관리자가 확인한 뒤 공개됩니다.</p>
+  <th:block th:replace="~{fragments :: flash}"></th:block>
+
+  <form class="form-card" method="post" enctype="multipart/form-data"
+        th:action="${concert == null} ? @{/concert/save} : @{/concertEdit/{id}(id=${concert.id})}" th:object="${form}">
+    <p class="req-note"><span class="req" aria-hidden="true">*</span> 표시는 꼭 입력해야 합니다.</p>
+
+    <div class="field">
+      <label for="title">공연 제목 <span class="req" aria-hidden="true">*</span></label>
+      <input id="title" th:field="*{title}" maxlength="100" required placeholder="예: 유한대 밴드부 정기공연">
+    </div>
+
+    <fieldset class="field">
+      <legend>공연 분류 <span class="req" aria-hidden="true">*</span></legend>
+      <div class="chips">
+        <label class="chip-radio" th:each="cat : ${categories}">
+          <input type="radio" th:field="*{category}" th:value="${cat}" data-etc-toggle>
+          <span th:text="${cat.label}">분류</span>
+        </label>
+      </div>
+      <div class="etc-field" data-etc-field>
+        <label for="categoryEtc">기타 분류 이름</label>
+        <input id="categoryEtc" th:field="*{categoryEtc}" maxlength="30" placeholder="예: 재즈, 뮤지컬, 클래식">
+      </div>
+    </fieldset>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="date">공연 날짜 <span class="req" aria-hidden="true">*</span></label>
+        <input type="date" id="date" th:field="*{date}" required th:attr="min=${concert == null} ? ${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}">
+      </div>
+      <div class="field">
+        <label for="place">공연 장소 <span class="req" aria-hidden="true">*</span></label>
+        <input id="place" th:field="*{place}" maxlength="100" required placeholder="예: 유한대학교 대강당">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="imageFile">포스터 사진 등록</label>
+      <p class="help" id="poster-help">포스터, 좌석 안내도처럼 관객이 공연을 알아보는 데 필요한 사진을 올려 주세요. 세로 포스터를 권장하며, jpg·png·gif·webp 형식 10MB 이하만 올릴 수 있습니다.</p>
+      <div class="current-poster" th:if="${concert != null and concert.image != null}">
+        <img th:src="${concert.image}" alt="지금 등록된 포스터"><span class="muted">새 사진을 고르면 이 사진을 바꿉니다.</span>
+      </div>
+      <input type="file" id="imageFile" name="imageFile" accept=".jpg,.jpeg,.png,.gif,.webp" aria-describedby="poster-help">
+    </div>
+
+    <fieldset class="field">
+      <legend>좌석 안내 <span class="req" aria-hidden="true">*</span></legend>
+      <p class="help" th:if="${reservedSeats > 0}">예매가 <b th:text="${reservedSeats}">0</b>석 있어 좌석 배치는 바꿀 수 없습니다.</p>
+      <div class="seg">
+        <label><input type="radio" name="seated" value="true" th:checked="*{seated}" data-seat-toggle> 좌석 지정 (관객이 자리를 골라 예매)</label>
+        <label><input type="radio" name="seated" value="false" th:checked="*{!seated}" data-seat-toggle> 해당사항 없음 (자유석·스탠딩)</label>
+      </div>
+
+      <div class="seat-editor" data-seat-editor>
+        <p class="help">열 이름과 좌석 수를 입력하세요. 예) A열 10석, B열 20석 · 한 열 최대 50석</p>
+        <div class="rows" data-rows>
+          <div class="row-input" th:each="name, st : *{rowNames}">
+            <input name="rowNames" th:value="${name}" maxlength="3" aria-label="열 이름" placeholder="A">
+            <span>열</span>
+            <input type="number" name="rowCounts" th:value="${form.rowCounts.size() > st.index} ? ${form.rowCounts[st.index]}" min="1" max="50" aria-label="좌석 수" placeholder="10">
+            <span>석</span>
+            <button type="button" class="link-btn" data-row-remove>삭제</button>
+          </div>
+        </div>
+        <template id="row-tpl">
+          <div class="row-input">
+            <input name="rowNames" maxlength="3" aria-label="열 이름" placeholder="A">
+            <span>열</span>
+            <input type="number" name="rowCounts" min="1" max="50" aria-label="좌석 수" placeholder="10">
+            <span>석</span>
+            <button type="button" class="link-btn" data-row-remove>삭제</button>
+          </div>
+        </template>
+        <div class="seat-editor-foot">
+          <button type="button" class="btn ghost small" data-row-add>+ 열 추가</button>
+          <span class="muted">총 <b data-seat-total>0</b>석</span>
+        </div>
+      </div>
+
+      <div class="free-seats" data-free-seats>
+        <label for="totalSeats">총 인원</label>
+        <input type="number" id="totalSeats" th:field="*{totalSeats}" min="1" max="100000" placeholder="예: 100">
+      </div>
+    </fieldset>
+
+    <div class="field">
+      <label for="content">공연 소개 <span class="req" aria-hidden="true">*</span></label>
+      <textarea id="content" th:field="*{content}" rows="8" maxlength="5000" required placeholder="출연진, 입장 시간, 관람 안내 등을 적어 주세요."></textarea>
+    </div>
+
+    <div class="form-actions">
+      <a class="btn ghost" th:href="${concert == null} ? '/concertList' : @{/concertDetail/{id}(id=${concert.id})}">취소</a>
+      <button type="submit" class="btn" th:text="${concert == null} ? '등록하기' : '수정하기'">등록하기</button>
+    </div>
+  </form>
+</main>
+<footer th:replace="~{fragments :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>시안 C · 입장권 더미</title><link rel="stylesheet" href="base.css">
+<style>
+.hero{padding:8px clamp(16px,5vw,72px) 0}
+.head{display:flex;justify-content:space-between;align-items:end;gap:24px;margin:28px 0 22px}
+.head h1{font-size:clamp(40px,6.4vw,92px);letter-spacing:-.05em;line-height:.95;margin:0}
+.head h1 em{font-style:normal;color:var(--accent)}
+.head p{max-width:340px;color:var(--ink-2);line-height:1.7;margin:0}
+.wide{position:relative;height:min(56vh,520px);border-radius:24px;overflow:hidden;background:#111}
+.wide .bg{position:absolute;inset:-30px;background-size:cover;background-position:center;filter:blur(30px) brightness(.55)}
+.wide img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:100%;object-fit:contain}
+.wide .meta{position:absolute;left:24px;bottom:24px;right:24px;display:flex;align-items:end;justify-content:space-between;color:#fff;gap:16px}
+.wide .meta b{font-size:clamp(22px,2.6vw,34px);letter-spacing:-.03em}
+.wide .meta .num{font-size:clamp(48px,6vw,80px);line-height:.9;display:block}
+.prog{display:flex;gap:6px;margin-top:12px}.prog i{flex:1;height:3px;border-radius:3px;background:var(--line)}.prog i.on{background:var(--ink)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:44px 0 22px}
+.pile{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:28px 22px}
+.pile .tk{grid-template-columns:1fr;transition:transform .25s}
+.pile .tk:nth-child(3n+1){transform:rotate(-1.4deg)}.pile .tk:nth-child(3n+2){transform:rotate(1deg) translateY(10px)}.pile .tk:nth-child(3n){transform:rotate(-.6deg)}
+.pile .tk:hover{transform:rotate(0) translateY(-6px)}
+.pile .tk img{width:100%;height:200px;object-fit:cover}
+.pile .tk .body{border-left:0;border-top:2px dashed var(--line)}
+.pile .tk .body::before{left:-8px;top:-9px}.pile .tk .body::after{left:auto;right:-8px;top:-9px;bottom:auto}
+@media(max-width:720px){.head{flex-direction:column;align-items:start}.wide{height:62vh}}
+</style></head><body>
+<nav class="nav"><a class="logo">YuhanCon</a><div class="menu"><a aria-current="page">홈</a><a>공연 정보</a><a>게시판</a><a>마이페이지</a></div><div class="acct"><a>로그인</a><a>회원가입</a></div><svg class="burger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></nav>
+<section class="hero">
+  <div class="head"><h1>가까운 무대,<br><em>지금</em> 예매.</h1><p>학교 공연부터 버스킹·콘서트까지. 자리를 골라 예매하고, 같이 갈 사람은 게시판에서 찾으세요.</p></div>
+  <div class="wide"><div class="bg" style="background-image:url(../../../YuhanCon/src/main/resources/static/images/blackpink.jpg)"></div><img src="../../../YuhanCon/src/main/resources/static/images/blackpink.jpg" alt=""><div class="meta"><div><span class="num">12.24</span><b>BLACKPINK WORLD TOUR</b></div><a class="btn">예매하기</a></div></div>
+  <div class="prog"><i></i><i class="on"></i><i></i><i></i></div>
+</section>
+<div class="wrap">
+  <div class="chips"><button class="chip" aria-pressed="true">전체</button><button class="chip">콘서트</button><button class="chip">학교공연</button><button class="chip">버스킹</button><button class="chip">기타</button></div>
+  <div class="pile" id="p"></div>
+</div>
+<footer class="foot"><b>YuhanCon.</b> 학교 공연부터 버스킹·콘서트까지, 가까운 무대를 찾고 예매하는 공연 플랫폼<br>함께 갈 사람은 게시판에서 찾아보세요.</footer>
+<div class="tag">시안 C · 입장권 더미</div>
+<script src="data.js"></script><script>document.getElementById('p').innerHTML=SHOWS.map(TK).join('');</script></body></html>

@@ -1,55 +1,85 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-<title>글 상세</title>
-<link rel="stylesheet" th:href="@{/css/boardDetail.css}">
-</head>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${board.title})}"></head>
 <body>
-<!-- 상단 네비게이션 -->
-<div class="navbar">
-    <div class="nav-left">
-        <a href="/main" class="logo">YuhanCon</a>
-        <a href="/main">홈</a>
-        <a href="/concertList">공연정보</a>
-        <a href="/boardMain">게시판</a>
-        <a href="/mypage">마이페이지</a>
-    </div>
-    <div class="nav-right">
-        <a href="/logout">로그아웃</a>
-    </div>
-</div>
+<a th:replace="~{fragments :: skip}"></a>
+<nav th:replace="~{fragments :: nav('board', false)}"></nav>
 
-<h1 th:text="${board.title}">제목</h1>
-<hr class="divider">
-<div class="content-box">
-    <div class="content-text" th:text="${board.content}"></div>
-</div>
+<main id="main" class="wrap page narrow">
+  <p class="crumb"><a href="/boardMain">← 게시판</a></p>
+  <th:block th:replace="~{fragments :: flash}"></th:block>
+  <article class="post">
+    <h1 th:text="${board.title}">제목</h1>
+    <p class="post-meta"><b th:text="${board.member.name}">작성자</b> · <span th:text="${#temporals.format(board.boardAt, 'yyyy.MM.dd')}">날짜</span> · 조회 <span th:text="${viewCount}">0</span></p>
+    <!-- th:text는 HTML을 글자로 바꿔 출력하므로 <script>를 써도 실행되지 않는다 -->
+    <div class="prose" th:text="${board.content}">내용</div>
+    <form th:action="@{/board/{id}/like(id=${board.id})}" method="post" class="post-like">
+      <button type="submit" class="like-btn" th:classappend="${liked} ? 'on'" th:attr="aria-pressed=${liked}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.4-9.1C1.2 7.9 3.4 4.8 6.6 4.8c2 0 3.5 1.1 4.4 2.6.9-1.5 2.4-2.6 4.4-2.6 3.2 0 5.4 3.1 4 6.6-1.9 4.5-9.4 9.1-9.4 9.1z"/></svg>
+        좋아요 <b th:text="${board.likeCount}">0</b>
+      </button>
+    </form>
+  </article>
+  <section class="comments" id="comments" aria-labelledby="cm-h">
+    <h2 id="cm-h">댓글 <span th:text="${commentCount}">0</span></h2>
 
+    <form class="comment-form" th:action="@{/boardDetail/{id}/comment(id=${board.id})}" method="post">
+      <label for="comment-new" class="sr-only">댓글 쓰기</label>
+      <textarea id="comment-new" name="content" rows="3" maxlength="1000" required placeholder="댓글을 남겨 보세요 (최대 1000자)"
+                th:text="${draftParentId == null} ? ${commentDraft} : ''"></textarea>
+      <button type="submit" class="btn small">댓글 등록</button>
+    </form>
 
-<div class="meta-info">
-  <span th:text="${board.member.name}">작성자</span> ·
-  <span th:text="${#temporals.format(board.boardAt, 'yyyy-MM-dd')}">작성일</span>
-</div>
+    <p class="empty" th:if="${comments.isEmpty()}">첫 댓글을 남겨 보세요.</p>
+    <ol class="comment-list">
+      <li th:each="c : ${comments}" class="comment" th:id="'comment-' + ${c.id}">
+        <div class="comment-body" th:classappend="${c.deleted} ? 'removed'">
+          <p class="comment-meta" th:unless="${c.deleted}"><b th:text="${c.member.name}">이름</b>
+            <span class="muted" th:text="${#temporals.format(c.createdAt, 'yyyy.MM.dd HH:mm')}">날짜</span></p>
+          <p class="comment-text" th:text="${c.deleted} ? '삭제된 댓글입니다.' : ${c.content}">내용</p>
+          <div class="comment-actions" th:unless="${c.deleted}">
+            <details class="reply-toggle" th:attr="open=${draftParentId == c.id} ? 'open'">
+              <summary>답글</summary>
+              <form class="comment-form reply" th:action="@{/boardDetail/{id}/comment(id=${board.id})}" method="post">
+                <input type="hidden" name="parentId" th:value="${c.id}">
+                <label th:for="'reply-' + ${c.id}" class="sr-only" th:text="${c.member.name} + ' 님 댓글에 답글 쓰기'">답글</label>
+                <textarea th:id="'reply-' + ${c.id}" name="content" rows="2" maxlength="1000" required placeholder="답글을 남겨 보세요"
+                          th:text="${draftParentId == c.id} ? ${commentDraft} : ''"></textarea>
+                <button type="submit" class="btn small">답글 등록</button>
+              </form>
+            </details>
+            <form th:if="${deletableIds.contains(c.id)}" th:action="@{/comment/{id}/delete(id=${c.id})}"
+                  method="post" class="inline" data-confirm="이 댓글을 삭제할까요?">
+              <button type="submit" class="link-btn danger">삭제</button>
+            </form>
+          </div>
+        </div>
+        <ol class="reply-list" th:if="${replies[c.id] != null}">
+          <li th:each="r : ${replies[c.id]}" class="comment reply-item" th:id="'comment-' + ${r.id}">
+            <div class="comment-body">
+              <p class="comment-meta"><span class="reply-mark" aria-hidden="true">↳</span> <b th:text="${r.member.name}">이름</b>
+                <span class="muted" th:text="${#temporals.format(r.createdAt, 'yyyy.MM.dd HH:mm')}">날짜</span></p>
+              <p class="comment-text" th:text="${r.content}">내용</p>
+              <div class="comment-actions">
+                <form th:if="${deletableIds.contains(r.id)}" th:action="@{/comment/{id}/delete(id=${r.id})}"
+                      method="post" class="inline" data-confirm="이 답글을 삭제할까요?">
+                  <button type="submit" class="link-btn danger">삭제</button>
+                </form>
+              </div>
+            </div>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </section>
 
-
-<hr class="divider">
-
-<!-- 버튼 영역 -->
-<div class="detail-actions">
-  <div class="btn-group">
-    <!-- 작성자만 수정/삭제 가능 -->
-    <a th:if="${isOwner}" th:href="@{'/boardEdit/' + ${board.id}}" class="action-btn">수정</a>
-
-	<form th:if="${isOwner}" th:action="@{'/boardDelete/' + ${board.id}}" method="post" style="display:inline;">
-	  <button type="submit" class="action-btn"
-	          onclick="return confirm('정말 삭제하시겠습니까?')">삭제</button>
-	</form>
-
-    <!-- 목록은 항상 보임 -->
-    <a th:href="@{/boardMain}" class="action-btn">목록으로</a>
+  <div class="post-actions" th:if="${canEdit}">
+    <a class="btn ghost small" th:href="@{/boardEdit/{id}(id=${board.id})}">수정</a>
+    <form th:action="@{/boardDelete/{id}(id=${board.id})}" method="post" class="inline" data-confirm="이 글을 삭제할까요?">
+      <button type="submit" class="btn ghost small danger">삭제</button>
+    </form>
   </div>
-</div>
-
-
+</main>
+<footer th:replace="~{fragments :: footer}"></footer>
 </body>
 </html>

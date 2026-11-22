@@ -1,75 +1,96 @@
 package com.yuhancon.controller;
 
-import java.time.LocalDate;
+import java.security.Principal;
+import java.util.List;
+import java.util.Set;
 
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.yuhancon.domain.Concert;
 import com.yuhancon.domain.Member;
 import com.yuhancon.domain.Reserve;
-import com.yuhancon.repository.ConcertRepository;
-import com.yuhancon.repository.ReserveRepository;
-import com.yuhancon.security.CustomUserDetails;
+import com.yuhancon.service.MemberService;
+import com.yuhancon.service.ReserveService;
+import com.yuhancon.service.UserFacingException;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
 public class ReserveController {
 
-    private final ReserveRepository reserveRepository;
-    private final ConcertRepository concertRepository;
+    private static final String TAKEN = "방금 다른 분이 같은 좌석을 예매했습니다. 다른 좌석을 골라 주세요.";
+
+    private final ReserveService reserveService;
+    private final MemberService memberService;
+
+    private Member me(Principal p) {
+        return memberService.get(p.getName());
+    }
 
     @PostMapping("/reserve")
-    public String reserve(
-        @RequestParam Long concertId,
-        @RequestParam int seatCount,
-        @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        Member member = userDetails.getMember();
-        Concert concert = concertRepository.findById(concertId).orElseThrow();
-
-        if (concert.getAvailableSeats() < seatCount) {
-            throw new IllegalArgumentException("남은 좌석이 부족합니다.");
+    public String reserve(@RequestParam Long concertId, @RequestParam(defaultValue = "0") int seatCount,
+                          @RequestParam(required = false) List<String> seats,
+                          Principal principal, RedirectAttributes ra) {
+        try {
+            Reserve r = reserveService.reserve(concertId, seatCount, seats, me(principal));
+            ra.addFlashAttribute("successMessage", "「" + r.getConcert().getTitle() + "」 " + r.getSeatCount() + "석 예매가 완료되었습니다.");
+            return "redirect:/mypage";
+        } catch (UserFacingException e) {
+            ra.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("errorMessage", seats == null ? "이미 예매한 공연입니다." : TAKEN);
         }
-
-        concert.setAvailableSeats(concert.getAvailableSeats() - seatCount);
-
-        Reserve reserve = new Reserve();
-        reserve.setMember(member);
-        reserve.setConcert(concert);
-        reserve.setSeatCount(seatCount);
-        reserve.setReservedAt(LocalDate.now());
-
-        reserveRepository.save(reserve);
-        concertRepository.save(concert);
-
-        return "redirect:/concertList";
+        return "redirect:/concertDetail/" + concertId;
     }
-    
+
+    // 예매 수정 화면: 내 좌석은 고른 상태로, 남의 좌석은 막힌 상태로 보여 준다
+    @GetMapping("/reserveEdit/{id}")
+    public String editForm(@PathVariable Long id, Principal principal, Model model) {
+        Reserve r = reserveService.getOwn(id, me(principal));
+        Concert c = r.getConcert();
+        Set<String> taken = reserveService.takenSeats(c.getId());
+        List<String> mine = r.getSeats() == null ? List.of() : List.of(r.getSeats().split(","));
+        taken.removeAll(mine);
+        model.addAttribute("reserve", r);
+        model.addAttribute("concert", c);
+        model.addAttribute("taken", taken);
+        model.addAttribute("mySeats", mine);
+        model.addAttribute("maxSeats", ReserveService.MAX_SEATS_PER_MEMBER);
+        return "reserveEdit";
+    }
+
+    @PostMapping("/reserveEdit/{id}")
+    public String edit(@PathVariable Long id, @RequestParam(defaultValue = "0") int seatCount,
+                       @RequestParam(required = false) List<String> seats,
+                       Principal principal, RedirectAttributes ra) {
+        try {
+            reserveService.update(id, seatCount, seats, me(principal));
+            ra.addFlashAttribute("successMessage", "예매를 수정했습니다.");
+            return "redirect:/mypage";
+        } catch (UserFacingException e) {
+            ra.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("errorMessage", TAKEN);
+        }
+        return "redirect:/reserveEdit/" + id;
+    }
+
     @PostMapping("/cancelReserve/{id}")
-    @Transactional
-    public String cancelReserve(@PathVariable Long id) {
-        // 1. 예약 정보 가져오기
-        Reserve reserve = reserveRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("해당 예약이 없습니다."));
-
-        // 2. 공연 정보 가져오기
-        Concert concert = reserve.getConcert();
-
-        // 3. 남은 좌석 수 복구
-        concert.setAvailableSeats(concert.getAvailableSeats() + reserve.getSeatCount());
-
-        // 4. 예약 삭제
-        reserveRepository.deleteById(id);
-
+    public String cancel(@PathVariable Long id, Principal principal, RedirectAttributes ra) {
+        try {
+            Concert c = reserveService.cancel(id, me(principal));
+            ra.addFlashAttribute("successMessage", "「" + c.getTitle() + "」 예매를 취소했습니다.");
+        } catch (UserFacingException e) {
+            ra.addFlashAttribute("errorMessage", e.getMessage());
+        }
         return "redirect:/mypage";
     }
-    
 }
-

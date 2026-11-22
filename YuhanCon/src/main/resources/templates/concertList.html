@@ -1,66 +1,61 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>공연 목록</title>
-    <link rel="stylesheet" th:href="@{/css/concertList.css}">
-</head>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('공연 정보')}"></head>
 <body>
+<a th:replace="~{fragments :: skip}"></a>
+<nav th:replace="~{fragments :: nav('concert', false)}"></nav>
 
-<!-- 상단 네비게이션 -->
-<div class="navbar">
-    <div class="nav-left">
-        <a href="/main" class="logo">YuhanCon</a>
-        <a href="/main">홈</a>
-        <a href="/concertList">공연정보</a>
-        <a href="/boardMain">게시판</a>
-        <a href="/mypage">마이페이지</a>
+<main id="main" class="wrap page">
+  <div class="page-head">
+    <h1>공연 정보</h1>
+    <a class="btn" href="/concertWrite" th:if="${me != null and me.canManageConcerts()}">+ 공연 등록</a>
+  </div>
+  <th:block th:replace="~{fragments :: flash}"></th:block>
+
+  <section class="notice-box" th:if="${myPending != null and !myPending.isEmpty()}" aria-labelledby="pend-h">
+    <h2 id="pend-h">승인 대기 중인 내 공연</h2>
+    <p>관리자가 승인하면 공연 정보에 공개됩니다.</p>
+    <ul class="plain-list">
+      <li th:each="c : ${myPending}"><a th:href="@{/concertDetail/{id}(id=${c.id})}" th:text="${c.title}">제목</a>
+        <span class="muted" th:text="${#temporals.format(c.date, 'yyyy.MM.dd')}">날짜</span></li>
+    </ul>
+  </section>
+
+  <form class="filter-bar" method="get" action="/concertList">
+    <div class="chips" role="group" aria-label="분류">
+      <a class="chip" th:href="@{/concertList(sort=${sort})}" th:attr="aria-pressed=${category == null}">전체</a>
+      <a class="chip" th:each="cat : ${categories}" th:href="@{/concertList(category=${cat.name()}, sort=${sort})}"
+         th:attr="aria-pressed=${category == cat}" th:text="${cat.label}">분류</a>
     </div>
-    <div class="nav-right">
-        <a href="/logout">로그아웃</a>
-    </div>
-</div>
+    <input type="hidden" name="category" th:if="${category != null}" th:value="${category.name()}">
+    <label class="sort">
+      <span class="sr-only">정렬</span>
+      <select name="sort" data-autosubmit>
+        <option value="latest" th:selected="${sort == 'latest'}">최신 등록순</option>
+        <option value="oldest" th:selected="${sort == 'oldest'}">오래된 등록순</option>
+        <option value="likes" th:selected="${sort == 'likes'}">좋아요 순</option>
+      </select>
+    </label>
+    <noscript><button type="submit" class="btn small">정렬</button></noscript>
+  </form>
 
-<h1>공연 목록</h1>
+  <div class="grid" th:if="${!concerts.isEmpty()}">
+    <th:block th:each="c : ${concerts}"><article th:replace="~{fragments :: ticket(${c}, ${likedIds}, 'list')}"></article></th:block>
+  </div>
+  <p class="empty" th:if="${concerts.isEmpty()}">조건에 맞는 다가오는 공연이 없습니다.</p>
 
-<table>
-    <colgroup>
-        <col style="width: 8%;">
-        <col style="width: 32%;">
-        <col style="width: 20%;">
-        <col style="width: 15%;">
-        <col style="width: 12%;">
-        <col style="width: 13%;">
-    </colgroup>
-    <thead>
-        <tr>
-            <th>번호</th>
-            <th>제목</th>
-            <th>장소</th>
-            <th>날짜</th>
-            <th>총좌석</th>
-            <th>남은좌석</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr th:each="concert : ${concertList}">
-            <td th:text="${concert.id}">1</td>
-            <td style="text-align: left;">
-                <a th:href="@{'/concertDetail/' + ${concert.id}}" th:text="${concert.title}">공연제목</a>
-            </td>
-            <td th:text="${concert.place}"></td>
-            <td th:text="${#temporals.format(concert.date, 'yyyy-MM-dd')}"></td>
-            <td th:text="${concert.totalSeats}"></td>
-            <td th:text="${concert.availableSeats}"></td>
-        </tr>
-    </tbody>
-</table>
-
-<div style="margin-top: 20px;">
-    <a href="/concertWrite">
-        <button type="button">공연 등록</button>
-    </a>
-</div>
-
+  <section th:if="${!pastConcerts.isEmpty()}" aria-labelledby="past-h">
+    <h2 id="past-h" class="sec sec-sm">지난 공연</h2>
+    <ul class="past">
+      <li th:each="c : ${pastConcerts}">
+        <a th:href="@{/concertDetail/{id}(id=${c.id})}">
+          <b th:text="${c.title}">제목</b>
+          <span><span th:text="${#temporals.format(c.date, 'yyyy.MM.dd')}">날짜</span> · <span th:text="${c.categoryName}">분류</span> · 종료</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+</main>
+<footer th:replace="~{fragments :: footer}"></footer>
 </body>
 </html>

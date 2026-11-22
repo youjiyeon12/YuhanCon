@@ -1,43 +1,78 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <title>회원가입 페이지</title>
-  <link rel="stylesheet" href="/css/signup.css">
-</head>
+<head th:replace="~{fragments :: head('회원가입')}"></head>
 <body>
-  <div class="signup-container">
-    <h2>회원가입</h2>
-    <form th:action="@{/signup}" th:object="${member}" method="post">
-  <div class="form-group">
-    <label for="email">이메일</label>
-    <input type="text" th:field="*{email}" id="email" placeholder="이메일" required>
-    <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}" style="color:red;"></div>
-  </div>
+<a th:replace="~{fragments :: skip}"></a>
+<nav th:replace="~{fragments :: nav('', false)}"></nav>
 
-  <div class="form-group">
-    <label for="name">이름</label>
-    <input type="text" th:field="*{name}" id="name" placeholder="이름" required>
-    <div th:if="${#fields.hasErrors('name')}" th:errors="*{name}" style="color:red;"></div>
-  </div>
+<main id="main" class="wrap page auth">
+  <h1>회원가입</h1>
+  <form class="form-card" th:action="@{/signup}" th:object="${form}" method="post" novalidate data-signup>
+    <p class="req-note"><span class="req" aria-hidden="true">*</span> 표시는 꼭 입력해야 합니다.</p>
 
-  <div class="form-group">
-    <label for="password">비밀번호</label>
-    <input type="password" th:field="*{password}" id="password" placeholder="비밀번호" required>
-    <div th:if="${#fields.hasErrors('password')}" th:errors="*{password}" style="color:red;"></div>
-  </div>
+    <fieldset class="field">
+      <legend>회원 유형 <span class="req" aria-hidden="true">*</span></legend>
+      <div class="seg">
+        <label th:each="r : ${roles}"><input type="radio" th:field="*{role}" th:value="${r}">
+          <span th:text="${r.label}">일반 사용자</span>
+          <small th:text="${r.name() == 'PERFORMER'} ? '공연 등록 + 예매' : '공연 예매'">설명</small></label>
+      </div>
+      <p class="field-error" th:if="${#fields.hasErrors('role')}" th:errors="*{role}"></p>
+    </fieldset>
 
-  <div class="form-group">
-    <label for="phone">전화번호</label>
-    <input type="text" th:field="*{phone}" id="phone" placeholder="전화번호" required>
-    <div th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}" style="color:red;"></div>
-  </div>
+    <div class="field">
+      <label for="loginId">아이디 <span class="req" aria-hidden="true">*</span></label>
+      <div class="input-with-btn">
+        <input id="loginId" th:field="*{loginId}" maxlength="12" autocomplete="username" required
+               placeholder="영문·숫자 섞어 6~12자" aria-describedby="loginId-help loginId-check"
+               th:attr="aria-invalid=${#fields.hasErrors('loginId')}">
+        <button type="button" class="btn ghost small" data-check-id>중복 확인</button>
+      </div>
+      <p class="help" id="loginId-help">영문과 숫자를 섞어 6~12자. 가입 후에는 바꿀 수 없습니다.</p>
+      <p class="check-msg" id="loginId-check" role="status" aria-live="polite"></p>
+      <p class="field-error" th:if="${#fields.hasErrors('loginId')}" th:errors="*{loginId}"></p>
+    </div>
 
-  <div th:if="${emailError}" th:text="${emailError}" style="color:red;"></div>
+    <div class="field">
+      <label for="name">이름 <span class="req" aria-hidden="true">*</span></label>
+      <input id="name" th:field="*{name}" maxlength="30" autocomplete="name" required placeholder="예: 홍길동"
+             th:attr="aria-invalid=${#fields.hasErrors('name')}">
+      <p class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+    </div>
 
-  <button type="submit">가입하기</button>
-</form>
+    <div class="field">
+      <label for="email">이메일 <span class="req" aria-hidden="true">*</span></label>
+      <input type="email" id="email" th:field="*{email}" maxlength="100" autocomplete="email" required placeholder="예: name@example.com"
+             th:attr="aria-invalid=${#fields.hasErrors('email')}">
+      <p class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></p>
+    </div>
 
-  </div>
+    <div class="field">
+      <label for="password">비밀번호 <span class="req" aria-hidden="true">*</span></label>
+      <input type="password" id="password" th:field="*{password}" autocomplete="new-password" required placeholder="영문·숫자 포함 8자 이상"
+             aria-describedby="pw-help" th:attr="aria-invalid=${#fields.hasErrors('password')}">
+      <p class="help" id="pw-help">영문과 숫자를 포함해 공백 없이 8자 이상</p>
+      <p class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></p>
+    </div>
+
+    <div class="field">
+      <label for="passwordConfirm">비밀번호 확인 <span class="req" aria-hidden="true">*</span></label>
+      <input type="password" id="passwordConfirm" th:field="*{passwordConfirm}" autocomplete="new-password" required placeholder="비밀번호를 한 번 더 입력"
+             th:attr="aria-invalid=${#fields.hasErrors('passwordConfirm')}">
+      <p class="field-error" th:if="${#fields.hasErrors('passwordConfirm')}" th:errors="*{passwordConfirm}"></p>
+    </div>
+
+    <div class="field">
+      <label for="phone">전화번호 <span class="req" aria-hidden="true">*</span></label>
+      <input type="tel" id="phone" th:field="*{phone}" maxlength="11" inputmode="numeric" autocomplete="tel" required placeholder="- 없이 숫자만 (예: 01012345678)"
+             th:attr="aria-invalid=${#fields.hasErrors('phone')}">
+      <p class="field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></p>
+    </div>
+
+    <button type="submit" class="btn block">가입하기</button>
+    <p class="form-foot">이미 회원이신가요? <a href="/login">로그인</a></p>
+  </form>
+</main>
+<footer th:replace="~{fragments :: footer}"></footer>
 </body>
 </html>

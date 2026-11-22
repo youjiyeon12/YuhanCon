@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('예매 수정')}"></head>
+<body>
+<a th:replace="~{fragments :: skip}"></a>
+<nav th:replace="~{fragments :: nav('mypage', false)}"></nav>
+
+<main id="main" class="wrap page narrow">
+  <p class="crumb"><a href="/mypage">← 마이페이지</a></p>
+  <h1>예매 수정</h1>
+  <p class="lead"><b th:text="${concert.title}">공연</b> · <span th:text="${#temporals.format(concert.date, 'yyyy. MM. dd')}">날짜</span> · <span th:text="${concert.place}">장소</span></p>
+  <th:block th:replace="~{fragments :: flash}"></th:block>
+
+  <p class="state-msg" th:if="${concert.past}">종료된 공연은 예매를 바꿀 수 없습니다.</p>
+  <p class="state-msg sold" th:if="${!concert.past and concert.soldOut}">남은 좌석이 없어 예매를 수정할 수 없습니다. 취소만 할 수 있습니다.</p>
+
+  <form th:if="${!concert.past and !concert.soldOut}" class="reserve-box reserve-form" method="post" th:action="@{/reserveEdit/{id}(id=${reserve.id})}">
+    <th:block th:if="${concert.seated}">
+      <div th:replace="~{fragments :: seatmap(${concert}, ${taken}, ${mySeats}, ${maxSeats})}"></div>
+      <div class="sum">
+        <p><b class="seat-summary" data-empty="좌석을 골라 주세요">좌석을 골라 주세요</b> <span class="muted">(1인 최대 <span th:text="${maxSeats}">6</span>석)</span></p>
+        <button type="submit" class="btn">수정하기</button>
+      </div>
+    </th:block>
+    <div class="sum" th:unless="${concert.seated}">
+      <label class="count">매수
+        <select name="seatCount">
+          <option th:each="n : ${#numbers.sequence(1, maxSeats)}" th:if="${n <= concert.availableSeats + reserve.seatCount}"
+                  th:value="${n}" th:text="${n} + '석'" th:selected="${n == reserve.seatCount}">1석</option>
+        </select>
+      </label>
+      <button type="submit" class="btn">수정하기</button>
+    </div>
+  </form>
+
+  <form th:if="${!concert.past}" method="post" th:action="@{/cancelReserve/{id}(id=${reserve.id})}" class="cancel-row"
+        th:attr="data-confirm='「' + ${concert.title} + '」 예매를 취소할까요?'">
+    <button type="submit" class="btn ghost danger">예매 취소</button>
+  </form>
+</main>
+<footer th:replace="~{fragments :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>공연정보 - YuhanCon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1440px; height: 900px; overflow: hidden;
+    background: #000; color: #fff;
+    font-family: "Gothic A1", sans-serif;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  /* nav */
+  .nav {
+    height: 64px; display: flex; align-items: center;
+    padding: 0 40px; border-bottom: 1px solid #1c1c1c;
+  }
+  .logo { font-weight: 800; font-size: 20px; letter-spacing: -0.02em; margin-right: 48px; }
+  .menu { display: flex; gap: 32px; font-size: 15px; color: #9a9a9a; }
+  .menu a.on { color: #fff; font-weight: 700; box-shadow: inset 0 -2px 0 #fff; padding-bottom: 20px; margin-bottom: -22px; }
+  .logout {
+    margin-left: auto; font: inherit; font-size: 14px; color: #ccc;
+    background: none; border: 1px solid #333; border-radius: 6px; padding: 7px 14px; cursor: pointer;
+  }
+
+  /* stage */
+  .stage { position: relative; height: 836px; display: flex; justify-content: center; align-items: center; }
+  .poster {
+    position: relative; width: 450px; height: 800px;
+    border-radius: 14px; overflow: hidden; background: #111;
+  }
+  .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .scrim {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 52%;
+    background: linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,0) 100%);
+  }
+  .info { position: absolute; left: 28px; right: 28px; bottom: 30px; }
+  .info h1 { font-size: 32px; font-weight: 800; line-height: 1.25; letter-spacing: -0.02em; }
+  .meta { margin-top: 14px; font-size: 15px; line-height: 1.7; color: #e6e6e6; }
+  .seats { margin-top: 18px; display: flex; align-items: baseline; gap: 8px; font-size: 14px; color: #cfcfcf; }
+  .seats b { font-size: 22px; font-weight: 800; color: #fff; }
+  .bar { margin-top: 10px; height: 4px; background: rgba(255,255,255,.22); border-radius: 2px; }
+  .bar i { display: block; width: 72.5%; height: 100%; background: #fff; border-radius: 2px; }
+
+  /* right rail */
+  .rail {
+    position: absolute; left: calc(50% + 225px + 24px); bottom: 50px;
+    display: flex; flex-direction: column; gap: 12px; width: 168px;
+  }
+  .btn {
+    display: block; text-align: center; font: inherit; font-size: 15px; font-weight: 700;
+    padding: 15px 0; border-radius: 10px; border: 1px solid #3a3a3a; background: #141414; color: #fff;
+  }
+  .btn.primary { background: #2B3FD6; border-color: #2B3FD6; font-size: 16px; padding: 18px 0; }
+  .btn small { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; color: #9a9a9a; }
+
+  /* position indicator */
+  .pos {
+    position: absolute; left: calc(50% - 225px - 96px); top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 14px; font-size: 14px; color: #888;
+  }
+  .pos strong { color: #fff; font-size: 18px; font-weight: 800; }
+  .dots { display: flex; flex-direction: column; gap: 8px; }
+  .dots span { width: 4px; height: 20px; border-radius: 2px; background: #333; }
+  .dots span.on { background: #fff; height: 40px; }
+
+  /* next strip */
+  .next { position: absolute; right: 40px; top: 36px; width: 260px; }
+  .next h2 { font-size: 14px; font-weight: 700; color: #9a9a9a; margin-bottom: 12px; }
+  .item {
+    display: flex; gap: 14px; align-items: center; padding: 10px;
+    border-radius: 10px; border: 1px solid #1f1f1f; margin-bottom: 8px; background: #0b0b0b;
+  }
+  .item img { width: 48px; height: 64px; object-fit: cover; border-radius: 6px; background: #222; flex: none; }
+  .item p { font-size: 14px; font-weight: 700; line-height: 1.35; }
+  .item span { display: block; margin-top: 4px; font-size: 12px; font-weight: 500; color: #9a9a9a; }
+  .item .sold { color: #ff6b6b; }
+  .item.first { border-color: #3a3a3a; }
+
+  .hint {
+    position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
+    font-size: 12px; color: #6f6f6f;
+  }
+</style>
+</head>
+<body>
+  <header class="nav">
+    <a class="logo" href="/main">YuhanCon</a>
+    <nav class="menu">
+      <a href="/main">홈</a>
+      <a class="on" href="/concertList">공연정보</a>
+      <a href="/boardMain">게시판</a>
+      <a href="/mypage">마이페이지</a>
+    </nav>
+    <button class="logout" type="button">로그아웃</button>
+  </header>
+
+  <main class="stage">
+    <div class="pos" aria-label="4개 중 1번째 공연">
+      <strong>1</strong>
+      <div class="dots"><span class="on"></span><span></span><span></span><span></span></div>
+      <span>/ 4</span>
+    </div>
+
+    <article class="poster">
+      <img src="http://localhost:8080/images/aespa.jpg" alt="aespa 월드투어 SYNK 포스터">
+      <div class="scrim"></div>
+      <div class="info">
+        <h1>aespa 월드투어<br>SYNK</h1>
+        <p class="meta">2026-12-20 (토)<br>KSPO DOME</p>
+        <div class="seats"><b>87석</b> 남음 · 전체 120석</div>
+        <div class="bar"><i></i></div>
+      </div>
+    </article>
+
+    <div class="rail">
+      <a class="btn primary" href="#">예매하기</a>
+      <a class="btn" href="/boardMain">동행 구하기<small>게시판으로 이동</small></a>
+      <a class="btn" href="/concertDetail/1">상세 보기</a>
+    </div>
+
+    <aside class="next">
+      <h2>다음 공연</h2>
+      <a class="item first" href="#">
+        <img src="http://localhost:8080/images/psy.jpg" alt="">
+        <p>PSY 흠뻑쇼 2026<span>2026-12-27 · <em class="sold">매진</em></span></p>
+      </a>
+      <a class="item" href="#">
+        <img src="http://localhost:8080/images/blackpink.jpg" alt="">
+        <p>BLACKPINK BORN PINK 앙코르<span>2027-01-10 · 남은 12석</span></p>
+      </a>
+      <a class="item" href="#">
+        <img src="http://localhost:8080/images/concert.jpg" alt="">
+        <p>유한대 축제 밴드 공연<span>2027-01-24</span></p>
+      </a>
+    </aside>
+
+    <p class="hint">아래로 스크롤하면 다음 공연</p>
+  </main>
+</body>
+</html>

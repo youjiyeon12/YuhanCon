@@ -1,97 +1,104 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <title>마이페이지</title>
-  <link rel="stylesheet" th:href="@{/css/mypage.css}">
-  <link rel="stylesheet" th:href="@{/css/main.css}">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
+<head th:replace="~{fragments :: head('마이페이지')}"></head>
 <body>
+<a th:replace="~{fragments :: skip}"></a>
+<nav th:replace="~{fragments :: nav('mypage', false)}"></nav>
 
-<!-- 상단 네비게이션 -->
-<div class="navbar">
-  <div class="nav-left">
-    <a href="/main" class="logo">YuhanCon</a>
-    <a href="/main">홈</a>
-    <a href="/concertList">공연정보</a>
-    <a href="/boardMain">게시판</a>
-    <a href="/mypage">마이페이지</a>
+<main id="main" class="wrap page">
+  <div class="page-head">
+    <h1>마이페이지</h1>
   </div>
-  <div class="nav-right">
-    <a href="/logout">로그아웃</a>
-  </div>
-</div>
+  <th:block th:replace="~{fragments :: flash}"></th:block>
 
-<!-- 메인 컨테이너 -->
-<div class="container">
-  <h2>마이페이지</h2>
-  <div class="main-layout">
+  <section class="panel profile" aria-labelledby="me-h">
+    <div>
+      <h2 id="me-h" class="sr-only">내 정보</h2>
+      <p class="profile-name"><b th:text="${member.name}">이름</b> <span class="badge" th:text="${member.role.label}">일반 사용자</span></p>
+      <p class="muted"><span th:text="${member.loginId}">아이디</span> · <span th:text="${member.email}">이메일</span> · <span th:text="${member.phone}">전화</span></p>
+    </div>
+    <a class="btn ghost small" href="/editMember">회원 정보 수정</a>
+  </section>
 
-    <!-- 왼쪽 패널 -->
-    <div class="left-panel">
-
-      <!-- 사용자 정보 -->
-      <div class="user-box">
-        <p><strong th:text="${member.name}">수길</strong>님 반갑습니다!</p>
-        <p>이메일: <span th:text="${member.email}"></span></p>
-        <p>전화번호: <span th:text="${member.phone}"></span></p>
-        <p><a href="/editMember" class="link-text">회원정보를 변경하고 싶으신가요?</a></p>
-      </div>
-
-	 <!-- 예매 정보 -->
-	 <div class="booking-box" th:if="${not #lists.isEmpty(reserveList)}">
-	   <h3>예매 정보</h3>
-	   <div th:each="reserve : ${reserveList}" class="booking-item">
-	     <a th:href="@{|/concertDetail/${reserve.concert.id}|}" class="link-text">
-	       <h4 class="post-title" th:text="${reserve.concert.title}"></h4>
-	     </a>
-	     <p class="post-date" th:text="${#temporals.format(reserve.concert.date, 'yyyy-MM-dd')}"></p>
-	     <p class="post-content" th:text="'예매 수량: ' + ${reserve.seatCount} + '장'"></p>
-	     <!-- 예약 취소 -->
-	     <form th:action="@{|/cancelReserve/${reserve.id}|}" method="post" style="margin-top: 10px;">
-      	 	<button type="submit" class="btn-cancel" style="background-color: #d9534f; color: white; border: none; padding: 6px 10px; border-radius: 4px;">예약 취소</button>
-    	 </form>
-	   </div>
-	 </div>
-
-
-      <!-- 내가 쓴 글 -->
-      <a href="/boardMain" class="box-link">
-        <div class="posts-box">
-          <h3>내가 쓴 글</h3>
-          <div th:if="${#lists.isEmpty(myPosts)}" class="no-posts">
-            <p>작성한 게시글이 없습니다.</p>
-          </div>
-          <div th:each="post : ${myPosts}" class="post-item">
-            <a th:href="@{|/boardDetail/${post.id}|}" class="link-text">
-   			<h4 class="post-title" th:text="${post.title}"></h4>
-            <p class="post-date" th:text="${#temporals.format(post.boardAt, 'yyyy-MM-dd')}"></p>
-            <p class="post-content" th:text="${post.content}"></p>
+  <section aria-labelledby="tk-h">
+    <h2 id="tk-h" class="sec sec-sm">예매 내역</h2>
+    <p class="empty" th:if="${reserves.isEmpty()}">예매한 공연이 없습니다. <a href="/concertList">공연 정보 보기</a></p>
+    <div class="tickets">
+      <article class="mt" th:each="r : ${reserves}" th:classappend="${r.concert.past} ? 'ended'">
+        <div class="mt-main">
+          <p class="lbl">YUHANCON TICKET · <span th:text="${r.concert.categoryName}">콘서트</span></p>
+          <h3 th:text="${r.concert.title}">공연</h3>
+          <dl class="kv">
+            <div><dt>일자</dt><dd class="num" th:text="${#temporals.format(r.concert.date, 'yyyy.MM.dd')}">12.20</dd></div>
+            <div><dt>장소</dt><dd th:text="${r.concert.place}">장소</dd></div>
+            <div><dt>좌석</dt><dd th:text="${r.seats != null} ? ${#strings.replace(r.seats, ',', ' · ')} : '자유석'">B5 · B6</dd></div>
+            <div><dt>매수</dt><dd th:text="${r.seatCount} + '석'">2석</dd></div>
+          </dl>
+          <div class="mt-actions">
+            <a class="btn ghost small" th:href="@{/concertDetail/{id}(id=${r.concert.id})}">공연 정보 보기</a>
+            <a class="btn ghost small" th:if="${!r.concert.past}" th:href="@{/reserveEdit/{id}(id=${r.id})}">예매 수정</a>
+            <form th:if="${!r.concert.past}" th:action="@{/cancelReserve/{id}(id=${r.id})}" method="post" class="inline"
+                  th:attr="data-confirm='「' + ${r.concert.title} + '」 ' + ${r.seatCount} + '석 예매를 취소할까요?'">
+              <button type="submit" class="btn ghost small danger">예매 취소</button>
+            </form>
           </div>
         </div>
-      </a>
-
+        <div class="mt-stub">
+          <span class="stamp" th:if="${r.concert.past}">종료</span>
+          <span class="mt-date num" th:text="${#temporals.format(r.concert.date, 'MM.dd')}">12.20</span>
+          <span class="lbl">예매번호</span>
+          <span class="mt-no" th:text="${r.ticketNo}">YC-000001</span>
+        </div>
+      </article>
     </div>
+  </section>
 
-    <!-- 오른쪽 패널 -->
-    <div class="right-panel">
-  <h3>최근 내가 본 공연 목록</h3>
+  <div class="two-col">
+    <section class="panel" aria-labelledby="like-h">
+      <h2 id="like-h">좋아요한 공연</h2>
+      <p class="empty" th:if="${likes.isEmpty()}">공연 카드의 하트를 누르면 이곳에 모입니다.</p>
+      <ul class="plain-list">
+        <li th:each="l : ${likes}">
+          <a th:href="@{/concertDetail/{id}(id=${l.concert.id})}" th:text="${l.concert.title}">공연</a>
+          <span class="muted" th:text="${#temporals.format(l.concert.date, 'yyyy.MM.dd')} + (${l.concert.past} ? ' · 종료' : '')">날짜</span>
+        </li>
+      </ul>
+    </section>
 
-  <div th:if="${#lists.isEmpty(recentConcerts)}">
-    <p>최근 본 공연이 없습니다.</p>
+    <section class="panel" aria-labelledby="recent-h">
+      <h2 id="recent-h">최근 본 공연</h2>
+      <p class="empty" th:if="${recentConcerts.isEmpty()}">최근 본 공연이 없습니다.</p>
+      <ul class="plain-list">
+        <li th:each="v : ${recentConcerts}">
+          <a th:href="@{/concertDetail/{id}(id=${v.concert.id})}" th:text="${v.concert.title}">공연</a>
+          <span class="muted" th:text="${#temporals.format(v.concert.date, 'yyyy.MM.dd')}">날짜</span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="panel" th:if="${myConcerts != null}" aria-labelledby="mc-h">
+      <h2 id="mc-h">내가 등록한 공연</h2>
+      <p class="empty" th:if="${myConcerts.isEmpty()}">등록한 공연이 없습니다. <a href="/concertWrite">공연 등록</a></p>
+      <ul class="plain-list">
+        <li th:each="c : ${myConcerts}">
+          <a th:href="@{/concertDetail/{id}(id=${c.id})}" th:text="${c.title}">공연</a>
+          <span class="badge" th:classappend="${c.approved} ? '' : 'wait'" th:text="${c.approved} ? '공개' : '승인 대기'">공개</span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="panel" aria-labelledby="post-h">
+      <h2 id="post-h">내가 쓴 글</h2>
+      <p class="empty" th:if="${myPosts.isEmpty()}">쓴 글이 없습니다. <a href="/boardWrite">글쓰기</a></p>
+      <ul class="plain-list">
+        <li th:each="b : ${myPosts}">
+          <a th:href="@{/boardDetail/{id}(id=${b.id})}" th:text="${b.title}">글</a>
+          <span class="muted" th:text="${#temporals.format(b.boardAt, 'yyyy.MM.dd')}">날짜</span>
+        </li>
+      </ul>
+    </section>
   </div>
-
-  <div th:each="view : ${recentConcerts}">
-    <a th:href="@{|/concertDetail/${view.concert.id}|}" class="link-text">
-      <p th:text="${view.concert.title}" style="font-weight: bold; color: #333;"></p>
-    </a>
-    <p th:text="${#temporals.format(view.concert.date, 'yyyy-MM-dd')}"></p>
-  </div>
-</div>
-
-  </div>
-</div>
-
+</main>
+<footer th:replace="~{fragments :: footer}"></footer>
 </body>
 </html>
