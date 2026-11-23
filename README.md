@@ -5,7 +5,7 @@
 | 항목 | 내용 |
 |------|------|
 | 기간 | 2025.06.12 ~ 2025.06.22 (팀 개발) · 2026.11 (개인 리뉴얼) |
-| 인원 | 2명 (김수길, 김원정) → 리뉴얼은 김원정 1명 |
+| 인원 | 2명 (김수길, 김원정) → 리뉴얼 김원정 |
 | 기술 | Java 21, Spring Boot 3.5, Spring Security 6, Spring Data JPA, H2, Thymeleaf, JavaScript, HTML/CSS, JUnit 5 |
 | 테스트 | 기능·보안 테스트 18개 (MockMvc, 메모리 DB) |
 
